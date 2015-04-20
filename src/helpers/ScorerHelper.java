@@ -29,32 +29,7 @@ public class ScorerHelper {
 		mDataParser = new DataParser();
 
 		try {
-			final Class<? extends ScorerHelper> aClass = this.getClass();
-
 			File file = new File("resources/custom_data");
-
-//			System.out.println("files = " + files);
-//
-//			System.out.println("aClass = " + aClass);
-//			final Enumeration<URL> res = aClass.getClassLoader().getResources("");
-//
-//			while(res.hasMoreElements()){
-//				System.out.println("res = " + res.nextElement());
-//			}
-//			final URL resource = aClass.getClassLoader().getResource("custom_data");
-//			System.out.println("resource = " + resource);
-//			final URI uri = resource.toURI();
-//			System.out.println("uri = " + uri);
-//			final File file = new File(uri);
-//			System.out.println("file = " + file);
-
-
-			if(!file.exists()){
-				System.out.println("FILE DOES NOT EXIST!!");
-				new IllegalStateException().printStackTrace();
-			}else{
-				System.out.println("WE HAVE THE FILE!!!!");
-			}
 			mGraphData = mDataParser.loadV3Data(file);
 		} catch (IOException e) {
 			e.printStackTrace();
