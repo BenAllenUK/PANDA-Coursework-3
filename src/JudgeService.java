@@ -61,7 +61,7 @@ public class JudgeService {
         locations.put(Colour.Red,    56);
         locations.put(Colour.Blue,   12);
         locations.put(Colour.Green,  57);
-        locations.put(Colour.Black,  55);
+        locations.put(Colour.Black,  2);
         locations.put(Colour.White,  106);
         locations.put(Colour.Yellow, 22);
 

@@ -97,7 +97,7 @@ public class ShortestPathHelper {
         }
 
         if(positionsList == null){
-            System.err.println("positionsList is null for "+sourceId+" -> "+targetId);
+//            System.err.println("positionsList is null for "+sourceId+" -> "+targetId);
         }else if(positionsList.size() == 0){
             System.err.println("positionsList is empty for "+sourceId+" -> "+targetId);
         }

@@ -4,7 +4,7 @@ import helpers.Constants;
 import helpers.FutureHelper;
 import helpers.ScorerHelper;
 import models.ScoreElements;
-import models.ScoreHolder;
+import models.MoveInfoHolder;
 import scotlandyard.*;
 import solution.ScotlandYardMap;
 
@@ -23,24 +23,25 @@ public class MyAIPlayer implements Player {
     private final ScotlandYardMap mGameMap;
     private final ScorerHelper mScorer;
     private final FutureHelper mFuture;
+    private Graph<Integer, Route> mGraph;
 
 
     public MyAIPlayer(ScotlandYardView view, String graphFilename) {
 
         // Read in the graph
-        Graph<Integer, Route> graph = null;
+        mGraph = null;
         ScotlandYardGraphReader graphReader = new ScotlandYardGraphReader();
         try {
-            graph = graphReader.readGraph(graphFilename);
+            mGraph = graphReader.readGraph(graphFilename);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         // Update globals
         mViewController = view;
-        mGameMap = new ScotlandYardMap(graph);
+        mGameMap = new ScotlandYardMap(mGraph);
         mScorer = new ScorerHelper(mViewController, mGameMap);
-        mFuture = new FutureHelper(mViewController, mGameMap, mScorer);
+        mFuture = new FutureHelper(mViewController, mGameMap, mScorer, mGraph);
     }
 
     @Override
@@ -68,20 +69,43 @@ public class MyAIPlayer implements Player {
         } else {
             currentMoves = moves;
         }
-
+        HashMap<Colour, Integer> otherPlayerPositions = new HashMap<Colour, Integer>();
+        if(mViewController.getCurrentPlayer() == Constants.MR_X_COLOUR) {
+            for(Colour player : mViewController.getPlayers()){
+                otherPlayerPositions.put(player, mViewController.getPlayerLocation(player));
+            }
+        } else {
+            otherPlayerPositions.put(Constants.MR_X_COLOUR, mViewController.getPlayerLocation(Constants.MR_X_COLOUR));
+        }
 
         // Current Score
-        HashMap<ScoreElements, Float> scoreForMove = mScorer.score(currentLocation, currentMoves, currentPlayer);
+        HashMap<ScoreElements, Float> scoreForMove = mScorer.score(currentLocation, currentMoves, currentPlayer, otherPlayerPositions);
         System.out.println("A Current Score would be - Distance: " +  scoreForMove.get(ScoreElements.DISTANCE) + " MoveAvailability: " + scoreForMove.get(ScoreElements.MOVE_AVAILABILITY));
 
+        // Build up a hash map of the players current tickets
+        HashMap<Colour, HashMap<Ticket, Integer>> allPlayerTicketNumbers = new HashMap<Colour, HashMap<Ticket, Integer>>();
+        HashMap<Colour, Integer> allPlayerPositions = new HashMap<Colour, Integer>();
+        for (Colour thisPlayer : mViewController.getPlayers()) {
+            allPlayerPositions.put(thisPlayer, mViewController.getPlayerLocation(thisPlayer));
+
+            HashMap<Ticket, Integer> currentTicketNumbers = new HashMap<Ticket, Integer>();
+            for (Ticket currentTicket : Ticket.values()) {
+                currentTicketNumbers.put(currentTicket, mViewController.getPlayerTickets(thisPlayer, currentTicket));
+            }
+            allPlayerTicketNumbers.put(thisPlayer, currentTicketNumbers);
+        }
+
+
         // Calculate the score for the available moves
-        Set<ScoreHolder> futureMovesAndScores = mFuture.calculateScores(currentMoves, currentPlayer);
+        Set<MoveInfoHolder> futureMovesAndScores = mFuture.calculateScores(currentMoves, currentPlayer, allPlayerTicketNumbers, allPlayerPositions, 0);
 
         // Log the future Scores
         System.out.println("Future scores from current moves are: [ ");
-        for (ScoreHolder futureMove : futureMovesAndScores) {
-            System.out.println("    Move: " + futureMove.move + " w/ Score - Distance: " + futureMove.scores.get(ScoreElements.DISTANCE) + " MoveAvailability: " + futureMove.scores.get(ScoreElements.MOVE_AVAILABILITY));
+        for (MoveInfoHolder futureMoveHolder : futureMovesAndScores) {
+            System.out.println("    Move: " + futureMoveHolder.move + " w/ Score - Distance: " + futureMoveHolder.scores.get(ScoreElements.DISTANCE) + " MoveAvailability: " + futureMoveHolder.scores.get(ScoreElements.MOVE_AVAILABILITY));
+
         }
+
         System.out.println("]");
 
 
@@ -89,7 +113,7 @@ public class MyAIPlayer implements Player {
         Move finalMove;
 
         // If it is the Detectives then get the minimum distance to MrX otherwise get he maximum distance from the other players
-        if(currentPlayer != Constants.MRX_COLOUR) {
+        if(currentPlayer != Constants.MR_X_COLOUR) {
             finalMove = mFuture.getMaxScoreDetectives(futureMovesAndScores);
         } else {
             finalMove = mFuture.getMaxScoreMrX(futureMovesAndScores);
@@ -101,7 +125,38 @@ public class MyAIPlayer implements Player {
         return finalMove;
     }
 
-
+//    private int exploreTree(Set<MoveInfoHolder> currentInfoHolders, int depth, Colour currentPlayer) {
+//        // If the depth limit has not been reached
+//
+//        Set<MoveInfoHolder> decidedMoves = new HashSet<MoveInfoHolder>();
+//        int nextDepth = depth - 1;
+//        MoveInfoHolder finalMove = null;
+//        float maximumScore = 0.0f;
+//
+//        // Find the child with the maximum score
+//        for (MoveInfoHolder currentHolder : currentInfoHolders) {
+//            Set<MoveInfoHolder> nextMoveHolders =  mFuture.calculateScores(currentHolder.movesFromHere, currentPlayer);
+//            int percentage = exploreTree(nextMoveHolders, nextDepth, currentPlayer);
+//            float thisDistance = currentHolder.scores.get(ScoreElements.DISTANCE);
+//
+//            // Because we want to find the smallest distance
+//            if(currentPlayer == Constants.MR_X_COLOUR){
+//                thisDistance = 1.0f / thisDistance;
+//            }
+//            if (thisDistance > maximumScore) {
+//                finalMove = currentHolder;
+//                maximumScore = thisDistance;
+//            }
+//        }
+//
+//        Set<Move> movesFromTarget = finalMove.movesFromHere;
+//        decidedMoves.add(finalMove);
+//        if(depth > 0) {
+//            decidedMoves.addAll(exploreTree(nextMoveHolders, nextDepth, currentPlayer));
+//        }
+//        return decidedMoves;
+//
+//    }
 
 
 }

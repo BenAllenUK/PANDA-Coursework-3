@@ -17,13 +17,10 @@ import java.util.Set;
  */
 public class RandomPlayer implements Player {
     public RandomPlayer(ScotlandYardView view, String graphFilename) {
-        //TODO: A better AI makes use of `view` and `graphFilename`.
     }
 
     @Override
     public Move notify(int location, Set<Move> moves) {
-        //TODO: Some clever AI here ...
-
         int choice = new Random().nextInt(moves.size());
         for (Move move : moves) {
             if (choice == 0) {
