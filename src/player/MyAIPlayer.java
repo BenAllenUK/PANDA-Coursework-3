@@ -3,7 +3,7 @@ package player;
 import helpers.Constants;
 import helpers.FutureHelper;
 import helpers.ScorerHelper;
-import models.ScoreElements;
+import models.ScoreElement;
 import models.MoveInfoHolder;
 import scotlandyard.*;
 import solution.ScotlandYardMap;
@@ -79,8 +79,8 @@ public class MyAIPlayer implements Player {
         }
 
         // Current Score
-        HashMap<ScoreElements, Float> scoreForMove = mScorer.score(currentLocation, currentMoves, currentPlayer, otherPlayerPositions);
-        System.out.println("A Current Score would be - Distance: " +  scoreForMove.get(ScoreElements.DISTANCE) + " MoveAvailability: " + scoreForMove.get(ScoreElements.MOVE_AVAILABILITY));
+        HashMap<ScoreElement, Float> scoreForMove = mScorer.score(currentLocation, currentMoves, currentPlayer, otherPlayerPositions);
+        System.out.println("A Current Score would be - Distance: " +  scoreForMove.get(ScoreElement.DISTANCE) + " MoveAvailability: " + scoreForMove.get(ScoreElement.MOVE_AVAILABILITY));
 
         // Build up a hash map of the players current tickets
         HashMap<Colour, HashMap<Ticket, Integer>> allPlayerTicketNumbers = new HashMap<Colour, HashMap<Ticket, Integer>>();
@@ -102,7 +102,7 @@ public class MyAIPlayer implements Player {
         // Log the future Scores
         System.out.println("Future scores from current moves are: [ ");
         for (MoveInfoHolder futureMoveHolder : futureMovesAndScores) {
-            System.out.println("    Move: " + futureMoveHolder.move + " w/ Score - Distance: " + futureMoveHolder.scores.get(ScoreElements.DISTANCE) + " MoveAvailability: " + futureMoveHolder.scores.get(ScoreElements.MOVE_AVAILABILITY));
+            System.out.println("    Move: " + futureMoveHolder.move + " w/ Score - Distance: " + futureMoveHolder.scores.get(ScoreElement.DISTANCE) + " MoveAvailability: " + futureMoveHolder.scores.get(ScoreElement.MOVE_AVAILABILITY));
 
         }
 

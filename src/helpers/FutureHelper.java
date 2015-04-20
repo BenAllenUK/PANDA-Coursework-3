@@ -1,6 +1,6 @@
 package helpers;
 
-import models.ScoreElements;
+import models.ScoreElement;
 import models.MoveInfoHolder;
 import scotlandyard.*;
 import solution.ScotlandYardMap;
@@ -37,11 +37,11 @@ public class FutureHelper {
         // Loop through each move info holder
         for (MoveInfoHolder moveInfoHolder : futureMovesAndScores) {
             // Get its distance
-            float thisDistance = moveInfoHolder.scores.get(ScoreElements.DISTANCE);
+            float thisDistance = moveInfoHolder.scores.get(ScoreElement.DISTANCE);
 
             // Get its move availability - i've decided not include this at the moment
-            float thisAvailability = moveInfoHolder.scores.get(ScoreElements.MOVE_AVAILABILITY);
-            float thisScore =  1 / thisDistance;
+            float thisAvailability = moveInfoHolder.scores.get(ScoreElement.MOVE_AVAILABILITY);
+            float thisScore = thisDistance;
 
             // Get the biggest score
             if(thisScore > currentMaximum){
@@ -66,9 +66,9 @@ public class FutureHelper {
         // Loop through each MoveInfoHolder
         for (MoveInfoHolder moveInfoHolder : futureMovesAndScores) {
             // Get its distance
-            float thisDistance = moveInfoHolder.scores.get(ScoreElements.DISTANCE);
+            float thisDistance = moveInfoHolder.scores.get(ScoreElement.DISTANCE);
             // Get its move availability - i've decided not include this at the moment
-            float thisAvailability = moveInfoHolder.scores.get(ScoreElements.MOVE_AVAILABILITY);
+            float thisAvailability = moveInfoHolder.scores.get(ScoreElement.MOVE_AVAILABILITY);
 
             // If this move lands on mrX then take it
             if(thisDistance == 0){
@@ -142,7 +142,7 @@ public class FutureHelper {
 //            }
 
             // Get the score if this move was made, with the tickets surrounding moves
-            HashMap<ScoreElements, Float> scoreForMove = mScorer.score(endTarget, availableMoves, currentPlayer, otherPlayerPositionsCurrently);
+            HashMap<ScoreElement, Float> scoreForMove = mScorer.score(endTarget, availableMoves, currentPlayer, otherPlayerPositionsCurrently);
 
             // Add it as a possible move
             scores.add(new MoveInfoHolder(move, scoreForMove, availableMoves, futureTickets));
@@ -268,7 +268,7 @@ public class FutureHelper {
                 float thisMaximumScore = 0.0f;
                 Move thisMaximumMove = null;
                 for (MoveInfoHolder moveInfoHolder : moveInfoHolders) {
-                    float thisDistance = moveInfoHolder.scores.get(ScoreElements.DISTANCE);
+                    float thisDistance = moveInfoHolder.scores.get(ScoreElement.DISTANCE);
                     if(thisDistance > thisMaximumScore){
                         thisMaximumScore = thisDistance;
                         thisMaximumMove = moveInfoHolder.move;
@@ -318,7 +318,7 @@ public class FutureHelper {
                 MoveInfoHolder maximumMoveHolder = null;
                 for (MoveInfoHolder moveInfoHolder : childMoveInfoHolders) {
 
-                    float thisDistance = moveInfoHolder.scores.get(ScoreElements.DISTANCE);
+                    float thisDistance = moveInfoHolder.scores.get(ScoreElement.DISTANCE);
                     if(thisDistance > thisMaximumScore){
                         thisMaximumScore = thisDistance;
                         maximumMoveHolder = moveInfoHolder;
@@ -331,7 +331,7 @@ public class FutureHelper {
 
                 }
                 // Log
-                System.out.println(prefix + move.toString() + " " + maximumMoveHolder.scores.get(ScoreElements.DISTANCE));
+                System.out.println(prefix + move.toString() + " " + maximumMoveHolder.scores.get(ScoreElement.DISTANCE));
                 logMoveInfoHolder(prefix, childMoveInfoHolders, maximumMoveHolder);
 
                 if(maximumMoveHolder != null) {
@@ -339,9 +339,9 @@ public class FutureHelper {
                 }
             } else {
                 newAllPlayerPositions.remove(currentPlayer);
-                HashMap<ScoreElements, Float> scoreForMove = mScorer.score(endTarget, futureMoves, currentPlayer, newAllPlayerPositions);
+                HashMap<ScoreElement, Float> scoreForMove = mScorer.score(endTarget, futureMoves, currentPlayer, newAllPlayerPositions);
                 newAllPlayerPositions.put(currentPlayer, endTarget);
-                output.add(new MoveInfoHolder(move, scoreForMove, futureMoves, newAllPlayerTicketNumbers.get(currentPlayer)));
+				output.add(new MoveInfoHolder(move, scoreForMove, futureMoves, newAllPlayerTicketNumbers.get(currentPlayer)));
 
             }
         }
@@ -355,9 +355,9 @@ public class FutureHelper {
         for (MoveInfoHolder childMoveInfoHolder : childMoveInfoHolders) {
 
             if(maximumMoveHolder == childMoveInfoHolder) {
-                System.out.println(prefix + "    " + " ** " + childMoveInfoHolder.move.toString() + " " + childMoveInfoHolder.scores.get(ScoreElements.DISTANCE));
+                System.out.println(prefix + "    " + " ** " + childMoveInfoHolder.move.toString() + " " + childMoveInfoHolder.scores.get(ScoreElement.DISTANCE));
             } else {
-                System.out.println(prefix + "    " + "    " + childMoveInfoHolder.move.toString() + " " + childMoveInfoHolder.scores.get(ScoreElements.DISTANCE));
+                System.out.println(prefix + "    " + "    " + childMoveInfoHolder.move.toString() + " " + childMoveInfoHolder.scores.get(ScoreElement.DISTANCE));
             }
         }
         if(prefix == ""){

@@ -1,11 +1,15 @@
 package helpers;
 
-import models.DataPath;
 import models.DataPosition;
-import models.ScoreElements;
-import scotlandyard.*;
+import models.DataSave;
+import models.ScoreElement;
+import scotlandyard.Colour;
+import scotlandyard.Move;
+import scotlandyard.ScotlandYardView;
 import solution.ScotlandYardMap;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -15,12 +19,47 @@ import java.util.Set;
  */
 public class ScorerHelper {
     private final ScotlandYardView viewController;
-    private ScotlandYardMap gameMap;
+	private DataSave mGraphData;
+	private ScotlandYardMap gameMap;
+	private final DataParser mDataParser;
 
     public ScorerHelper(ScotlandYardView vc, ScotlandYardMap gm){
         viewController = vc;
         gameMap = gm;
-    }
+		mDataParser = new DataParser();
+
+		try {
+			final Class<? extends ScorerHelper> aClass = this.getClass();
+
+			File file = new File("resources/custom_data");
+
+//			System.out.println("files = " + files);
+//
+//			System.out.println("aClass = " + aClass);
+//			final Enumeration<URL> res = aClass.getClassLoader().getResources("");
+//
+//			while(res.hasMoreElements()){
+//				System.out.println("res = " + res.nextElement());
+//			}
+//			final URL resource = aClass.getClassLoader().getResource("custom_data");
+//			System.out.println("resource = " + resource);
+//			final URI uri = resource.toURI();
+//			System.out.println("uri = " + uri);
+//			final File file = new File(uri);
+//			System.out.println("file = " + file);
+
+
+			if(!file.exists()){
+				System.out.println("FILE DOES NOT EXIST!!");
+				new IllegalStateException().printStackTrace();
+			}else{
+				System.out.println("WE HAVE THE FILE!!!!");
+			}
+			mGraphData = mDataParser.loadV3Data(file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
     /**
      * Will produce a list of scores for the current position
@@ -29,16 +68,16 @@ public class ScorerHelper {
      * @param currentPlayer the current player
      * @return the element that was tested and its score i.e distance, move availability etc
      */
-    public HashMap<ScoreElements, Float> score(int location, Set<Move> moves, Colour currentPlayer, HashMap<Colour, Integer> otherPlayerPositions){
+    public HashMap<ScoreElement, Float> score(int location, Set<Move> moves, Colour currentPlayer, HashMap<Colour, Integer> otherPlayerPositions){
 
-        HashMap<ScoreElements, Float> scoreMap = new HashMap<ScoreElements, Float>();
+        HashMap<ScoreElement, Float> scoreMap = new HashMap<ScoreElement, Float>();
         // Rating based on distance
         float distanceScore = getDistanceScore(location, currentPlayer, otherPlayerPositions);
-        scoreMap.put(ScoreElements.DISTANCE,distanceScore);
+        scoreMap.put(ScoreElement.DISTANCE,distanceScore);
 
         // Rating based on number of available moves
         float movesScore = getMovesScore(moves);
-        scoreMap.put(ScoreElements.MOVE_AVAILABILITY, movesScore);
+        scoreMap.put(ScoreElement.MOVE_AVAILABILITY, movesScore);
 
         return scoreMap;
     }
@@ -87,7 +126,7 @@ public class ScorerHelper {
                     int playerLocation = otherPlayerPositions.get(player);
 
                     // Get a list of their nodes
-                    ArrayList<DataPosition> distanceBetween = findDistanceBetween(location, playerLocation);
+					ArrayList<DataPosition> distanceBetween = findDistanceBetween(location, playerLocation);
 
                     int distanceBetweenNodes;
 
@@ -98,15 +137,18 @@ public class ScorerHelper {
                         distanceBetweenNodes = distanceBetween.size() - 1;
                     }
                     // Get the distance between the nodes and then add it onto the running total
-                    averageDistanceFromPlayers = averageDistanceFromPlayers + distanceBetweenNodes;
+//					System.out.println("averageDistanceFromPlayers = " + averageDistanceFromPlayers);
+					averageDistanceFromPlayers = averageDistanceFromPlayers + distanceBetweenNodes;
                 }
             }
 
+//			System.out.println("averageDistanceFromPlayers = " + averageDistanceFromPlayers);
             // Calculate the average
+
             averageDistanceFromTargets = averageDistanceFromPlayers / (viewController.getPlayers().size() - 1);
         }
         // Calculate score on distance
-        return averageDistanceFromTargets / Constants.MAX_DISTANCE_BETWEEN_NODES;
+		return averageDistanceFromTargets / Constants.MAX_DISTANCE_BETWEEN_NODES;
     }
 
     /**
@@ -117,28 +159,8 @@ public class ScorerHelper {
      */
     public ArrayList<DataPosition> findDistanceBetween(int targetLocation, int location){
 
-        // Create the storage arrays
-        ArrayList<DataPosition> dataPositions = new ArrayList<DataPosition>();
-        ArrayList<DataPath> dataPaths = new ArrayList<DataPath>();
-
-        // Loop through each location
-        for(int i = 1; i < 200; i++){
-            // Add in the location with no x and y positions since these do not matter
-            dataPositions.add(new DataPosition(0,0,i));
-
-            // Loop through all of its connecting routes
-            for (Edge<Integer, Route> route : gameMap.getRoutesFrom(i)) {
-                // Add in the path if it is not already known
-                DataPath newDataPath = new DataPath(route.source(), route.target());
-                DataPath newDataPathReverse = new DataPath(route.target(), route.source());
-
-                if (!dataPaths.contains(newDataPath) && !dataPaths.contains(newDataPathReverse)){
-                    dataPaths.add(newDataPath);
-                }
-            }
-        }
         // Now calculate the shortest distance
-        ArrayList<DataPosition> finalPositions = ShortestPathHelper.shortestPath(location, targetLocation, dataPositions, dataPaths);
+        ArrayList<DataPosition> finalPositions = ShortestPathHelper.shortestPath(location, targetLocation, mGraphData.positionList, mGraphData.pathList);
 
         // Return the number of paths that this is
         return finalPositions;
