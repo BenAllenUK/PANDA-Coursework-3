@@ -29,7 +29,7 @@ public class JudgeService {
         int    port   = Integer.parseInt(args[1]);
         int    gameId = Integer.parseInt(args[2]);
 
-        List<Boolean> rounds2 = Arrays.asList(
+        List<Boolean> rounds = Arrays.asList(
                 false,
                 false, false,
                 true,
@@ -41,18 +41,18 @@ public class JudgeService {
                 true,
                 false, false, false, false, false,
                 true);
-        List<Boolean> rounds = Arrays.asList(
-                true,
-                true, true,
-                true,
-                true, true, true, true,
-                true,
-                true, true, true, true,
-                true,
-                true, true, true, true,
-                true,
-                true, true, true, true, true,
-                true);
+//        List<Boolean> rounds = Arrays.asList(
+//                true,
+//                true, true,
+//                true,
+//                true, true, true, true,
+//                true,
+//                true, true, true, true,
+//                true,
+//                true, true, true, true,
+//                true,
+//                true, true, true, true, true,
+//                true);
 
         JudgedScotlandYard game = new JudgedScotlandYard(5, rounds, "resources/graph.txt");
 

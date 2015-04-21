@@ -57,6 +57,7 @@ public class MyAIPlayer implements Player {
         System.out.println("]");
 
         // If no location has been given then make one up and get its moves
+		//todo check that all this can be commented
         if(location == 0){
             currentLocation = new Random().nextInt(moves.size() - 1)  + 1;
             Set<Edge<Integer, Route>> movesFromLocation = mGameMap.getRoutesFrom(currentLocation);
@@ -70,19 +71,26 @@ public class MyAIPlayer implements Player {
             currentMoves = moves;
         }
         HashMap<Colour, Integer> otherPlayerPositions = new HashMap<Colour, Integer>();
-        if(mViewController.getCurrentPlayer() == Constants.MR_X_COLOUR) {
+        if(currentPlayer == Constants.MR_X_COLOUR) {
             for(Colour player : mViewController.getPlayers()){
                 otherPlayerPositions.put(player, mViewController.getPlayerLocation(player));
             }
         } else {
-            otherPlayerPositions.put(Constants.MR_X_COLOUR, mViewController.getPlayerLocation(Constants.MR_X_COLOUR));
+			int mrXLocation = mViewController.getPlayerLocation(Constants.MR_X_COLOUR);
+
+			//if mr x has not revealed himself then aim to go somewhere random
+			if(mrXLocation == 0){
+				mrXLocation = new Random().nextInt(mGraph.getNodes().size());
+			}
+
+			otherPlayerPositions.put(Constants.MR_X_COLOUR, mrXLocation);
         }
 
         // Current Score
         HashMap<ScoreElement, Float> scoreForMove = mScorer.score(currentLocation, currentMoves, currentPlayer, otherPlayerPositions);
         System.out.println("A Current Score would be - Distance: " +  scoreForMove.get(ScoreElement.DISTANCE) + " MoveAvailability: " + scoreForMove.get(ScoreElement.MOVE_AVAILABILITY));
 
-        // Build up a hash map of the players current tickets
+        // Build up a hash map of the players' current tickets
         HashMap<Colour, HashMap<Ticket, Integer>> allPlayerTicketNumbers = new HashMap<Colour, HashMap<Ticket, Integer>>();
         HashMap<Colour, Integer> allPlayerPositions = new HashMap<Colour, Integer>();
         for (Colour thisPlayer : mViewController.getPlayers()) {
@@ -114,9 +122,9 @@ public class MyAIPlayer implements Player {
 
         // If it is the Detectives then get the minimum distance to MrX otherwise get he maximum distance from the other players
         if(currentPlayer != Constants.MR_X_COLOUR) {
-            finalMove = mFuture.getMaxScoreDetectives(futureMovesAndScores);
+            finalMove = mFuture.getMaxScoringMove(futureMovesAndScores).move;
         } else {
-            finalMove = mFuture.getMaxScoreMrX(futureMovesAndScores);
+            finalMove = mFuture.getMinScoringMove(futureMovesAndScores).move;
         }
 
         // Log the suggested move

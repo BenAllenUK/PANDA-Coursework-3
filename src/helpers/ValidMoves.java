@@ -8,17 +8,22 @@ import java.util.*;
  * Created by benallen on 13/04/15.
  */
 public class ValidMoves {
-    private Graph<Integer, Route> mGraph;
+
+	Map<Integer, List<Edge<Integer, Route>>> connectedEdges;
 
     public ValidMoves(Graph<Integer, Route> mGraph) {
-        this.mGraph = mGraph;
+
+		connectedEdges = new HashMap<Integer, List<Edge<Integer, Route>>>();
+		for(Node<Integer> node : mGraph.getNodes()){
+			connectedEdges.put(node.data(), GraphHelper.getConnectedEdges(mGraph, node));
+		}
     }
 
-    public List<MoveTicket> getAvailableSingleMoves(Colour playerColour, int location, Map<Ticket, Integer> tickets) {
+    public Set<MoveTicket> getAvailableSingleMoves(Colour playerColour, int location, Map<Ticket, Integer> tickets) {
 
-        List<MoveTicket> moves = new ArrayList<MoveTicket>();
+        Set<MoveTicket> moves = new HashSet<MoveTicket>();
 
-        for (Edge<Integer, Route> edge : GraphHelper.getConnectedEdges(mGraph, new Node<Integer>(location))) {
+        for (Edge<Integer, Route> edge : connectedEdges.get(location)) {
 
             Integer firstNodePos = null;
             if (edge.source() == location) {
@@ -42,13 +47,13 @@ public class ValidMoves {
         return moves;
     }
 
-    public List<Move> validMoves(int playerPosition, Map<Ticket, Integer> currentTickets, Colour currentPlayer) {
+    public Set<Move> validMoves(int playerPosition, Map<Ticket, Integer> currentTickets, Colour currentPlayer) {
 
         int playerPos = playerPosition;
 
-        List<Move> validMoves = new ArrayList<Move>();
+        Set<Move> validMoves = new HashSet<Move>();
 
-        List<MoveTicket> firstMoves = getAvailableSingleMoves(currentPlayer, playerPos, currentTickets);
+        Set<MoveTicket> firstMoves = getAvailableSingleMoves(currentPlayer, playerPos, currentTickets);
 
         validMoves.addAll(firstMoves);
 
@@ -59,7 +64,7 @@ public class ValidMoves {
                 Map<Ticket, Integer> secondaryTickets = new HashMap<Ticket, Integer>(currentTickets);
                 secondaryTickets.put(firstMove.ticket, secondaryTickets.get(firstMove.ticket) - 1);
 
-                List<MoveTicket> secondMoves = getAvailableSingleMoves(currentPlayer, firstMove.target, secondaryTickets);
+                Set<MoveTicket> secondMoves = getAvailableSingleMoves(currentPlayer, firstMove.target, secondaryTickets);
 
                 for (MoveTicket secondMove : secondMoves) {
                     validMoves.add(MoveDouble.instance(currentPlayer, firstMove, secondMove));

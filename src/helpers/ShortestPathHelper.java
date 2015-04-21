@@ -1,12 +1,27 @@
 package helpers;
 
-
 import models.DataPath;
 import models.DataPosition;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ShortestPathHelper {
+	private final HashSet<SearchHolder> fullList;
+	private final ArrayList<DataPath> dataPaths;
+
+	public ShortestPathHelper (final ArrayList<DataPosition> dataPositions, final ArrayList<DataPath> dataPaths){
+
+		this.dataPaths = dataPaths;
+		fullList = new HashSet<SearchHolder>();
+
+		for(DataPosition dataPosition : dataPositions){
+			SearchHolder searchHolder = new SearchHolder(dataPosition);
+			fullList.add(searchHolder);
+		}
+
+	}
 
     /**
      *
@@ -14,35 +29,33 @@ public class ShortestPathHelper {
      *
      * @param sourceId the id of the source {@link models.DataPosition}
      * @param targetId the id of the target {@link models.DataPosition}
-     * @param dataPositions a list of all {@link models.DataPosition}s available to pass through
-     * @param dataPaths a list of all {@link models.DataPath}s available to pass along
      * @return A list of {@link models.DataPosition}s through which the shortest path traverses
      */
-    public static ArrayList<DataPosition> shortestPath(final int sourceId, final int targetId, final ArrayList<DataPosition> dataPositions, final ArrayList<DataPath> dataPaths){
+    public Set<DataPosition> shortestPath(final int sourceId, final int targetId){
 
-        ArrayList<SearchHolder> fullList = new ArrayList<SearchHolder>();
 
-        SearchHolder sourceHolder = null;
+        SearchHolder sourceHolder = new SearchHolder(new DataPosition(sourceId));
 
-        for(DataPosition dataPosition : dataPositions){
-            SearchHolder searchHolder = new SearchHolder(dataPosition);
-            fullList.add(searchHolder);
-            if(dataPosition.id == sourceId){
-                sourceHolder = searchHolder;
-            }
-        }
-
-        ArrayList<SearchHolder> queue = new ArrayList<SearchHolder>();
+        Set<SearchHolder> queue = new HashSet<SearchHolder>();
 
         sourceHolder.discovered = true;
-        queue.add(sourceHolder);
 
         SearchHolder targetHolder = null;
 
-        while(queue.size() > 0){
-            SearchHolder searchTerm = queue.iterator().next();
+		boolean firstRun = true;
 
-            queue.remove(searchTerm);
+        while(firstRun || queue.size() > 0){
+
+			//this helps with speed and efficiency
+			SearchHolder searchTerm;
+			if(firstRun){
+				firstRun = false;
+				searchTerm = sourceHolder;
+			}else {
+				searchTerm = queue.iterator().next();
+            	queue.remove(searchTerm);
+			}
+
 
             for(DataPath dataPath : dataPaths){
                 if(dataPath.id1 == searchTerm.dataPosition.id){
@@ -85,10 +98,10 @@ public class ShortestPathHelper {
 
         }
 
-        ArrayList<DataPosition> positionsList = null;
+        Set<DataPosition> positionsList = null;
 
         if(targetHolder != null){
-            positionsList = new ArrayList<DataPosition>();
+            positionsList = new HashSet<DataPosition>();
 
             while(targetHolder != null){
                 positionsList.add(targetHolder.dataPosition);

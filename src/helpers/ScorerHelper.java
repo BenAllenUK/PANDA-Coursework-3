@@ -10,7 +10,6 @@ import solution.ScotlandYardMap;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -19,6 +18,7 @@ import java.util.Set;
  */
 public class ScorerHelper {
     private final ScotlandYardView viewController;
+	private final ShortestPathHelper mShortestPathHelper;
 	private DataSave mGraphData;
 	private ScotlandYardMap gameMap;
 	private final DataParser mDataParser;
@@ -34,6 +34,9 @@ public class ScorerHelper {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		mShortestPathHelper = new ShortestPathHelper(mGraphData.positionList, mGraphData.pathList);
+
 	}
 
     /**
@@ -73,35 +76,34 @@ public class ScorerHelper {
      * @return the score for this location
      */
     public float getDistanceScore(int location, Colour currentPlayer, HashMap<Colour, Integer> otherPlayerPositions) {
-        float averageDistanceFromTargets;
+        float averageDistanceFromTargets = 0;
 
         // Is this player MRX or not?
         if(currentPlayer != Constants.MR_X_COLOUR){
 
             // If its a detective then calculate the distance between the player and mrX use this to calculate the score
-            ArrayList<DataPosition> distanceBetween = findDistanceBetween(location, otherPlayerPositions.get(Constants.MR_X_COLOUR));
+            Set<DataPosition> nodesBetween = mShortestPathHelper.shortestPath(location, otherPlayerPositions.get(Constants.MR_X_COLOUR));
 
             // If the list of nodes is 0 then the distance must be 0
-            if(distanceBetween == null) {
+            if(nodesBetween == null) {
                 averageDistanceFromTargets = 0;
             } else {
-                averageDistanceFromTargets = distanceBetween.size() - 1;
+                averageDistanceFromTargets = nodesBetween.size() - 1;
             }
         } else {
-            float averageDistanceFromPlayers = 0.0f;
 
 
             // Otherwise calculate the average from mrX and all the other players
             for (Colour player : viewController.getPlayers()) {
 
                 // Avoid checking MrX's distance to himself
-                if (player != Constants.MR_X_COLOUR) {
+                if (player != currentPlayer) {
 
                     // Get their location
                     int playerLocation = otherPlayerPositions.get(player);
 
                     // Get a list of their nodes
-					ArrayList<DataPosition> distanceBetween = findDistanceBetween(location, playerLocation);
+					Set<DataPosition> distanceBetween = mShortestPathHelper.shortestPath(location, playerLocation);
 
                     int distanceBetweenNodes;
 
@@ -112,32 +114,15 @@ public class ScorerHelper {
                         distanceBetweenNodes = distanceBetween.size() - 1;
                     }
                     // Get the distance between the nodes and then add it onto the running total
-//					System.out.println("averageDistanceFromPlayers = " + averageDistanceFromPlayers);
-					averageDistanceFromPlayers = averageDistanceFromPlayers + distanceBetweenNodes;
+					averageDistanceFromTargets += distanceBetweenNodes / (float) otherPlayerPositions.size();
                 }
             }
 
-//			System.out.println("averageDistanceFromPlayers = " + averageDistanceFromPlayers);
-            // Calculate the average
 
-            averageDistanceFromTargets = averageDistanceFromPlayers / (viewController.getPlayers().size() - 1);
         }
         // Calculate score on distance
 		return averageDistanceFromTargets / Constants.MAX_DISTANCE_BETWEEN_NODES;
     }
 
-    /**
-     * Get a list of nodes between to nodes that are the shortest path
-     * @param targetLocation the furthest node
-     * @param location the current node
-     * @return a list of nodes that form the shortest path between the two nodes
-     */
-    public ArrayList<DataPosition> findDistanceBetween(int targetLocation, int location){
 
-        // Now calculate the shortest distance
-        ArrayList<DataPosition> finalPositions = ShortestPathHelper.shortestPath(location, targetLocation, mGraphData.positionList, mGraphData.pathList);
-
-        // Return the number of paths that this is
-        return finalPositions;
-    }
 }
