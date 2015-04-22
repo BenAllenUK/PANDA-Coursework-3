@@ -103,13 +103,23 @@ public class MyAIPlayer implements Player {
             allPlayerTicketNumbers.put(thisPlayer, currentTicketNumbers);
         }
 
+		if(currentMoves.size() == 1){
+			Move move = currentMoves.iterator().next();
+			if(move instanceof MovePass){
+				return move;
+			}
+		}
+
 		final MoveInfoHolder bestMove = mFuture.calculateBestScore(currentMoves, currentPlayer, allPlayerTicketNumbers, allPlayerPositions);
 
 
-        // Log the suggested move
-        System.out.println("The selected move is: " + bestMove.move + "" );
-
-        return bestMove.move;
+		if(bestMove != null){
+			System.out.println("The selected move is: " + bestMove.move + "" );
+			return bestMove.move;
+		}else{
+			//return MovePass if moves are null and wasn't caught earlier
+			return currentMoves.iterator().next();
+		}
     }
 
 //    private int exploreTree(Set<MoveInfoHolder> currentInfoHolders, int depth, Colour currentPlayer) {

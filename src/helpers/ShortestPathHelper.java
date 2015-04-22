@@ -33,15 +33,13 @@ public class ShortestPathHelper {
      */
     public Set<DataPosition> shortestPath(final int sourceId, final int targetId){
 
-
-		HashSet<SearchHolder> localFullList = (HashSet<SearchHolder>) fullList.clone();
 		SearchHolder sourceHolder = null;
 
-
-		for(SearchHolder holder : localFullList){
-//			holder.discovered = false;
-//			holder.previousSearchHolder = null;
-			if(holder.dataPosition.id == sourceId){
+		HashSet<SearchHolder> localFullList = new HashSet<SearchHolder>();
+		for(SearchHolder searchHolder : fullList){
+			final SearchHolder holder = new SearchHolder(searchHolder.dataPosition);
+			localFullList.add(holder);
+			if(searchHolder.dataPosition.id == sourceId){
 				sourceHolder = holder;
 			}
 		}
@@ -147,6 +145,8 @@ public class ShortestPathHelper {
         public SearchHolder(DataPosition dataPosition) {
             this.dataPosition = dataPosition;
         }
+
+
     }
 
 

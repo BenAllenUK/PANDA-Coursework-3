@@ -142,6 +142,10 @@ public class FutureHelper {
 
 		final Set<MoveInfoHolder> scores = calculateScores(currentMoves, currentPlayer, allPlayerTicketNumbers, allPlayerPositions, 0);
 
+		if(scores == null){
+			return null;
+		}
+
 		MoveInfoHolder bestMoveHolder;
 		if(currentPlayer == Constants.MR_X_COLOUR){
 			bestMoveHolder = getMaxScoringMove(scores);
@@ -167,26 +171,16 @@ public class FutureHelper {
 
 
 
-
-
-
-
 		Set<MoveInfoHolder> moveInfoList = new HashSet<MoveInfoHolder>();
 		// For each given move pretend to execute it
-		int index=0;
 		for (Move move : currentMoves){
 
-//			System.out.println("starting loop @"+index+" on level "+currentDepth);
 			//first we create a map for all the current player positions
 			HashMap<Colour, Integer> postMovePositions = new HashMap<Colour, Integer>(allPlayerPositions);
 
 			//and another for all those players' tickets
 			HashMap<Colour,HashMap<Ticket, Integer>> postMoveTickets = new HashMap<Colour,HashMap<Ticket, Integer>>(allPlayerTicketNumbers);
 
-
-//			if(System.currentTimeMillis() - mStartTime > TIME_LIMIT){
-//				break;
-//			}
 
 			int endTarget;
 
@@ -238,7 +232,6 @@ public class FutureHelper {
 			//now we need to simulate what happens when other players make their moves too
 
 			// Re-create the moves taken by a perfect player(s)
-			int index2 = 0;
 			for (Map.Entry<Colour, Integer> opponent : oppTeam.entrySet()){
 
 				final Colour opponentColour = opponent.getKey();
@@ -246,7 +239,7 @@ public class FutureHelper {
 				final HashMap<Ticket, Integer> opponentTickets = postMoveTickets.get(opponentColour);
 
 				if(opponentPosition == 0){
-					System.out.println("MrX's location is unknown so we're guessing it");
+					//MrX's location is unknown so we're guessing it
 					opponentPosition = new Random().nextInt(190)+1;
 				}
 
@@ -254,7 +247,6 @@ public class FutureHelper {
 
 				//get the scores for the opponent's move
 
-//				System.out.println("calculateScoresOneLook @"+index+"@"+index2+" on level "+currentDepth);
 
 				Set<MoveInfoHolder> moveInfoHolders = calculateScoresOneLook(opponentValidMoves, opponentColour, allPlayerTicketNumbers, postMovePositions);
 
@@ -296,7 +288,6 @@ public class FutureHelper {
 				//or
 				//Mr X will be as far away as possible from the detective
 				postMovePositions.replace(opponentColour, endTarget2);
-				index2++;
 			}
 
 
@@ -308,11 +299,8 @@ public class FutureHelper {
 			HashMap<ScoreElement, Float> scoreForMove = mScorer.score(endTarget, validMoves, currentPlayer, postMovePositions);
 			moveInfoList.add(new MoveInfoHolder(move, scoreForMove, validMoves, postMoveTickets, postMovePositions));
 
-//			System.out.println("looping @"+index+" on level "+currentDepth);
-			index++;
 		}
 
-		System.out.println("done looping on level "+currentDepth);
 
 		//now we have scores for each of our moves... we should pick a subset and go deeper with them
 
@@ -355,20 +343,19 @@ public class FutureHelper {
 
 			final long startMillis = System.currentTimeMillis();
 
+			//first we remove the
 			if (currentDepth < 4) {
-				System.out.println("starting some threads");
+				System.out.println("starting threads");
+				System.out.println("going to level "+(currentDepth+1));
 				for (final MoveInfoHolder moveInfoHolder : moveInfoListSubSet) {
-					System.out.println("currentDepth = " + currentDepth);
 
 					//Create callable instance
 					Callable<MoveInfoHolder> callable = new Callable<MoveInfoHolder>() {
 						@Override
 						public MoveInfoHolder call() throws Exception {
 
-							System.out.println("starting call");
 							Set<MoveInfoHolder> childMoveInfoHolders = calculateScores(currentMovesFinal, currentPlayerFinal, allPlayerTicketNumbersFinal, allPlayerPositionsFinal, currentDepthFinal + 1);
 
-							System.out.println("doing call");
 							if (childMoveInfoHolders != null) {
 								MoveInfoHolder bestMoveHolder;
 								if (currentPlayerFinal == Constants.MR_X_COLOUR) {
@@ -379,11 +366,9 @@ public class FutureHelper {
 
 								moveInfoHolder.scores = bestMoveHolder.scores;
 
-								System.out.println("done with call");
 								return moveInfoHolder;
 							}
 
-							System.out.println("done with call (badly)");
 							return null;
 						}
 					};
@@ -392,7 +377,6 @@ public class FutureHelper {
 
 					//submit Callable tasks to be executed by thread pool
 					completionService.submit(callable);
-					//add Future to the list, we can get return value using Future
 
 				}
 
@@ -404,25 +388,24 @@ public class FutureHelper {
 					Future<MoveInfoHolder> resultFuture = null; //blocks if none available
 					try {
 						resultFuture = completionService.take();
-						MoveInfoHolder result = resultFuture.get();
-						moveInfoList.add(result);
+						MoveInfoHolder bestMoveHolder = resultFuture.get();
+						moveInfoList.add(bestMoveHolder);
 						received++;
 
-						System.out.println("took " + (System.currentTimeMillis() - startMillis) + "ms to execute call at level " + currentDepth);
+						System.out.println("took " + (System.currentTimeMillis() - startMillis) + "ms to execute thread at level " + currentDepth);
 					} catch (Exception e) {
 						//log
-						System.err.println("Error encountered");
+						System.err.println("Thread error encountered");
 						errors = true;
 					}
 					if(received < threadCount && !errors){
-						System.out.println("Not all threads completed yet (received:"+received+"/"+threadCount+")");
+						System.out.println("Not all threads completed yet (level: "+currentDepth+" received:"+received+"/"+threadCount+")");
 					}
 				}
 				System.out.println("Thread completed");
 			} else {
-				System.out.println("going to next level");
+				System.out.println("going to level "+(currentDepth+1));
 				for (final MoveInfoHolder moveInfoHolder : moveInfoListSubSet) {
-					System.out.println("currentDepth = " + currentDepth);
 
 					Set<MoveInfoHolder> childMoveInfoHolders = calculateScores(currentMovesFinal, currentPlayerFinal, allPlayerTicketNumbersFinal, allPlayerPositionsFinal, currentDepthFinal + 1);
 
@@ -436,7 +419,6 @@ public class FutureHelper {
 
 						moveInfoHolder.scores = bestMoveHolder.scores;
 
-						System.out.println("done with non-thread call");
 						moveInfoList.add(moveInfoHolder);
 					}
 				}
