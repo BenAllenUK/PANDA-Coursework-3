@@ -23,26 +23,29 @@ public class ValidMoves {
 
         Set<MoveTicket> moves = new HashSet<MoveTicket>();
 
-        for (Edge<Integer, Route> edge : connectedEdges.get(location)) {
+		final List<Edge<Integer, Route>> edges = connectedEdges.get(location);
+		try {
+			for (Edge<Integer, Route> edge : edges) {
 
-            Integer firstNodePos = null;
-            if (edge.source() == location) {
-                firstNodePos = edge.target();
-            } else if (edge.target() == location) {
-                firstNodePos = edge.source();
-            }
+				Integer firstNodePos = null;
+				if (edge.source() == location) {
+					firstNodePos = edge.target();
+				} else if (edge.target() == location) {
+					firstNodePos = edge.source();
+				}
 
-            Ticket requiredTicket = Ticket.fromRoute(edge.data());
-            if (tickets.containsKey(requiredTicket) && tickets.get(requiredTicket) > 0) {
-                moves.add(MoveTicket.instance(playerColour, requiredTicket, firstNodePos));
-            }
+				Ticket requiredTicket = Ticket.fromRoute(edge.data());
+				if (tickets.containsKey(requiredTicket) && tickets.get(requiredTicket) > 0) {
+					moves.add(MoveTicket.instance(playerColour, requiredTicket, firstNodePos));
+				}
 
-            if (tickets.containsKey(Ticket.Secret) && tickets.get(Ticket.Secret) > 0) {
-                moves.add(MoveTicket.instance(playerColour, Ticket.Secret, firstNodePos));
-            }
-
-
-        }
+				if (tickets.containsKey(Ticket.Secret) && tickets.get(Ticket.Secret) > 0) {
+					moves.add(MoveTicket.instance(playerColour, Ticket.Secret, firstNodePos));
+				}
+			}
+		}catch (NullPointerException e){
+			System.out.println("location = " + location);
+		}
 
         return moves;
     }

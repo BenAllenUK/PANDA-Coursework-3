@@ -81,7 +81,7 @@ public class ScorerHelper {
         // Is this player MRX or not?
         if(currentPlayer != Constants.MR_X_COLOUR){
 
-            // If its a detective then calculate the distance between the player and mrX use this to calculate the score
+			// If its a detective then calculate the distance between the player and mrX use this to calculate the score
             Set<DataPosition> nodesBetween = mShortestPathHelper.shortestPath(location, otherPlayerPositions.get(Constants.MR_X_COLOUR));
 
             // If the list of nodes is 0 then the distance must be 0
@@ -105,7 +105,7 @@ public class ScorerHelper {
                     // Get a list of their nodes
 					Set<DataPosition> distanceBetween = mShortestPathHelper.shortestPath(location, playerLocation);
 
-                    int distanceBetweenNodes;
+					int distanceBetweenNodes;
 
                     // If there is no distance then the game is over
                     if (distanceBetween == null) {
@@ -121,7 +121,8 @@ public class ScorerHelper {
 
         }
         // Calculate score on distance
-		return averageDistanceFromTargets / Constants.MAX_DISTANCE_BETWEEN_NODES;
+		final float distanceScore = averageDistanceFromTargets / Constants.MAX_DISTANCE_BETWEEN_NODES;
+		return distanceScore;
     }
 
 

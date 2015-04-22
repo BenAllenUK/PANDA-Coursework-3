@@ -34,7 +34,18 @@ public class ShortestPathHelper {
     public Set<DataPosition> shortestPath(final int sourceId, final int targetId){
 
 
-        SearchHolder sourceHolder = new SearchHolder(new DataPosition(sourceId));
+		HashSet<SearchHolder> localFullList = (HashSet<SearchHolder>) fullList.clone();
+		SearchHolder sourceHolder = null;
+
+
+		for(SearchHolder holder : localFullList){
+//			holder.discovered = false;
+//			holder.previousSearchHolder = null;
+			if(holder.dataPosition.id == sourceId){
+				sourceHolder = holder;
+			}
+		}
+
 
         Set<SearchHolder> queue = new HashSet<SearchHolder>();
 
@@ -59,7 +70,7 @@ public class ShortestPathHelper {
 
             for(DataPath dataPath : dataPaths){
                 if(dataPath.id1 == searchTerm.dataPosition.id){
-                    for(SearchHolder holder : fullList){
+                    for(SearchHolder holder : localFullList){
                         if(holder.dataPosition.id == dataPath.id2 && !holder.discovered){
                             holder.previousSearchHolder = searchTerm;
                             holder.discovered = true;
@@ -72,7 +83,7 @@ public class ShortestPathHelper {
                         }
                     }
                 }else if(dataPath.id2 == searchTerm.dataPosition.id){
-                    for(SearchHolder holder : fullList){
+                    for(SearchHolder holder : localFullList){
                         if(holder.dataPosition.id == dataPath.id1 && !holder.discovered){
                             holder.previousSearchHolder = searchTerm;
                             holder.discovered = true;

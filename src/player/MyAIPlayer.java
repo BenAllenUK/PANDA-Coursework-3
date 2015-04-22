@@ -103,34 +103,13 @@ public class MyAIPlayer implements Player {
             allPlayerTicketNumbers.put(thisPlayer, currentTicketNumbers);
         }
 
+		final MoveInfoHolder bestMove = mFuture.calculateBestScore(currentMoves, currentPlayer, allPlayerTicketNumbers, allPlayerPositions);
 
-        // Calculate the score for the available moves
-        Set<MoveInfoHolder> futureMovesAndScores = mFuture.calculateScores(currentMoves, currentPlayer, allPlayerTicketNumbers, allPlayerPositions, 0);
-
-        // Log the future Scores
-        System.out.println("Future scores from current moves are: [ ");
-        for (MoveInfoHolder futureMoveHolder : futureMovesAndScores) {
-            System.out.println("    Move: " + futureMoveHolder.move + " w/ Score - Distance: " + futureMoveHolder.scores.get(ScoreElement.DISTANCE) + " MoveAvailability: " + futureMoveHolder.scores.get(ScoreElement.MOVE_AVAILABILITY));
-
-        }
-
-        System.out.println("]");
-
-
-        // Final Move
-        Move finalMove;
-
-        // If it is the Detectives then get the minimum distance to MrX otherwise get he maximum distance from the other players
-        if(currentPlayer != Constants.MR_X_COLOUR) {
-            finalMove = mFuture.getMaxScoringMove(futureMovesAndScores).move;
-        } else {
-            finalMove = mFuture.getMinScoringMove(futureMovesAndScores).move;
-        }
 
         // Log the suggested move
-        System.out.println("The selected move is: " + finalMove + "" );
+        System.out.println("The selected move is: " + bestMove.move + "" );
 
-        return finalMove;
+        return bestMove.move;
     }
 
 //    private int exploreTree(Set<MoveInfoHolder> currentInfoHolders, int depth, Colour currentPlayer) {
