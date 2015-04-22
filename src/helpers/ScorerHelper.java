@@ -37,6 +37,19 @@ public class ScorerHelper {
 
 		mShortestPathHelper = new ShortestPathHelper(mGraphData.positionList, mGraphData.pathList);
 
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while(true) {
+					int f = 2;
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}).start();
 	}
 
     /**
@@ -78,6 +91,9 @@ public class ScorerHelper {
     public float getDistanceScore(int location, Colour currentPlayer, HashMap<Colour, Integer> otherPlayerPositions) {
         float averageDistanceFromTargets = 0;
 
+		if(currentPlayer == Constants.MR_X_COLOUR && location == 44){
+			int f=0;
+		}
         // Is this player MRX or not?
         if(currentPlayer != Constants.MR_X_COLOUR){
 
@@ -92,6 +108,7 @@ public class ScorerHelper {
             }
         } else {
 
+			int nearestDistance = Integer.MAX_VALUE;
 
             // Otherwise calculate the average from mrX and all the other players
             for (Colour player : viewController.getPlayers()) {
@@ -113,15 +130,22 @@ public class ScorerHelper {
                     } else {
                         distanceBetweenNodes = distanceBetween.size() - 1;
                     }
+
+					if(distanceBetweenNodes < nearestDistance){
+						nearestDistance = distanceBetweenNodes;
+					}
+
                     // Get the distance between the nodes and then add it onto the running total
 					averageDistanceFromTargets += distanceBetweenNodes / (float) otherPlayerPositions.size();
                 }
             }
 
+			return nearestDistance;
+
 
         }
         // Calculate score on distance
-		final float distanceScore = averageDistanceFromTargets / Constants.MAX_DISTANCE_BETWEEN_NODES;
+		final float distanceScore = averageDistanceFromTargets;// / Constants.MAX_DISTANCE_BETWEEN_NODES;
 		return distanceScore;
     }
 

@@ -5,6 +5,8 @@ function finish {
 }
 trap finish EXIT
 
+kill $(ps aux | grep '[n]ode' | awk '{print $2}')
+
 node server/server_service.js &
 serverProcess=$!
 

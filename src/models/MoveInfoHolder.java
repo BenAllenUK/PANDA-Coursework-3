@@ -16,6 +16,7 @@ public class MoveInfoHolder {
     public Set<Move> movesFromHere;
     public HashMap<Colour, HashMap<Ticket, Integer>> ticketNumbers;
     public HashMap<Colour, Integer> playerPositions;
+	public MoveInfoHolder nextMoveHolder;
     public MoveInfoHolder(Move possibleMove, HashMap<ScoreElement, Float> currentScores, Set<Move> movesFromHere, HashMap<Colour, HashMap<Ticket, Integer>> ticketNumbers, HashMap<Colour, Integer> playerPositions){
         this.move = possibleMove;
         this.scores = currentScores;

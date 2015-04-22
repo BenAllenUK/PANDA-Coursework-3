@@ -53,6 +53,8 @@ public class ShortestPathHelper {
 
 		boolean firstRun = true;
 
+//		final ExecutorService threadExecutor = Executors.newFixedThreadPool(2);
+
         while(firstRun || queue.size() > 0){
 
 			//this helps with speed and efficiency
@@ -65,13 +67,13 @@ public class ShortestPathHelper {
             	queue.remove(searchTerm);
 			}
 
-
             for(DataPath dataPath : dataPaths){
                 if(dataPath.id1 == searchTerm.dataPosition.id){
                     for(SearchHolder holder : localFullList){
                         if(holder.dataPosition.id == dataPath.id2 && !holder.discovered){
                             holder.previousSearchHolder = searchTerm;
                             holder.discovered = true;
+
                             if(holder.dataPosition.id == targetId){
                                 targetHolder = holder;
                             }else {

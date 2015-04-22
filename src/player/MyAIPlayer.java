@@ -3,13 +3,29 @@ package player;
 import helpers.Constants;
 import helpers.FutureHelper;
 import helpers.ScorerHelper;
-import models.ScoreElement;
 import models.MoveInfoHolder;
-import scotlandyard.*;
+import models.ScoreElement;
+import scotlandyard.Colour;
+import scotlandyard.Edge;
+import scotlandyard.Graph;
+import scotlandyard.Move;
+import scotlandyard.MoveDouble;
+import scotlandyard.MovePass;
+import scotlandyard.MoveTicket;
+import scotlandyard.Player;
+import scotlandyard.Route;
+import scotlandyard.ScotlandYardGraphReader;
+import scotlandyard.ScotlandYardView;
+import scotlandyard.Ticket;
 import solution.ScotlandYardMap;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * The MyAIPlayer class is a AI that uses scores to determine the next move. Since the
@@ -111,6 +127,59 @@ public class MyAIPlayer implements Player {
 		}
 
 		final MoveInfoHolder bestMove = mFuture.calculateBestScore(currentMoves, currentPlayer, allPlayerTicketNumbers, allPlayerPositions);
+
+		List<MoveInfoHolder> infoHolders = new ArrayList<MoveInfoHolder>();
+
+		MoveInfoHolder tempHolder = bestMove;
+		infoHolders.add(tempHolder);
+
+		Move move = tempHolder.move;
+
+		List<String> positions = new ArrayList<String>();
+
+
+
+		if (move instanceof MoveTicket){
+			positions.add("("+((MoveTicket)move).target+")");
+		}else{
+			positions.add("("+((MoveDouble)move).move1.target+" => "+((MoveDouble)move).move2.target+")");
+		}
+
+
+
+		while(tempHolder.nextMoveHolder != null){
+			tempHolder = tempHolder.nextMoveHolder;
+
+			move = tempHolder.move;
+
+			if (move instanceof MoveTicket){
+				positions.add("("+((MoveTicket)move).target+")");
+			}else{
+				positions.add("("+((MoveDouble)move).move1.target+" => "+((MoveDouble)move).move2.target+")");
+			}
+
+			infoHolders.add(tempHolder);
+		}
+
+		String path = String.valueOf(location);
+		int depth = 0;
+
+		for(String pos : positions){
+			depth++;
+			path += " => ";
+			path += pos;
+		}
+
+		for (final MoveInfoHolder moveInfoHolder : infoHolders) {
+			System.out.println(moveInfoHolder.move+" move score: " + moveInfoHolder.scores.get(ScoreElement.DISTANCE));
+		}
+
+
+
+
+
+
+		System.out.println("Move depth: "+depth+", "+path);
 
 
 		if(bestMove != null){

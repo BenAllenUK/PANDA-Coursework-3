@@ -27,11 +27,16 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class FutureHelper {
-
 	private final static int TIME_LIMIT = 12*1000;
-	private static final int MOVE_SUBSET_SIZE = 2;
+	private static final int MOVE_SUBSET_SIZE = 6;
+	public static final int MAX_THREAD_DEPTH = 4;
+	public static final int MAX_DEPTH = 2;
+	public static final boolean LOG_THREADS = false;
+	public static final boolean LOG_DEPTH = false;
 	private final ScotlandYardMap mGameMap;
 	private final ScotlandYardView mViewController;
 	private final ScorerHelper mScorer;
@@ -41,6 +46,9 @@ public class FutureHelper {
 	private int tCount=0;
 	private long mStartTime;
 	private ExecutorService threadExecutor;
+	private ExecutorService oneLookThreadExecutor;
+
+	private boolean finishUp;
 
 	public FutureHelper(ScotlandYardView mViewController, ScotlandYardMap mGameMap, ScorerHelper mScorer, Graph<Integer, Route> graph){
 		// Set controllers up
@@ -73,18 +81,28 @@ public class FutureHelper {
 
 
 	/**
-	 * Get the scores of all the future moves for a given player one look ahead
+	 * Get the scores of all the future moves for a given player one look ahead, can return a set of size
+	 * 0 if we run out of time
+	 *
 	 * @param currentMoves the moves they currently have available
 	 * @param player the player to test on
 	 * @param playerTicketsMap
 	 * @return - A list of MoveInfoHolder which contains the moves and their scores (distance & availabilty)
 	 */
-	public Set<MoveInfoHolder> calculateScoresOneLook(Set<Move> currentMoves, Colour player, HashMap<Colour, HashMap<Ticket, Integer>> playerTicketsMap, HashMap<Colour, Integer> otherPlayerPositionsCurrently) {
-		Set<MoveInfoHolder> scores = new HashSet<MoveInfoHolder>();
+	public Set<MoveInfoHolder> calculateScoresOneLook(Set<Move> currentMoves, final Colour player, HashMap<Colour, HashMap<Ticket, Integer>> playerTicketsMap, final HashMap<Colour, Integer> otherPlayerPositionsCurrently) {
+		final Set<MoveInfoHolder> scores = new HashSet<MoveInfoHolder>();
+
+		if(finishUp){
+			return scores;
+		}
+
+		CompletionService<MoveInfoHolder> completionService =
+				new ExecutorCompletionService<MoveInfoHolder>(oneLookThreadExecutor);
+
 
 		// For each given move pretend to execute it
-		for (Move move : currentMoves){
-			int nextPos;
+		for (final Move move : currentMoves){
+			final int nextPos;
 
 			// If its a double move then explore its target otherwise treat it as standard ticket
 			final boolean isDouble = move instanceof MoveDouble;
@@ -118,15 +136,51 @@ public class FutureHelper {
 
 			final HashMap<Colour, HashMap<Ticket, Integer>> cacheTicketmap = updateFutureTicketNumbers(player, ticket1, ticket2, playerTicketsMap);
 
-			assert before.equals(playerTicketsMap.get(player));
+			//Create callable instance
+			Callable<MoveInfoHolder> callable = new Callable<MoveInfoHolder>() {
+				@Override
+				public MoveInfoHolder call() throws Exception {
 
-			Set<Move> nextMoves = mValidator.validMoves(nextPos, cacheTicketmap.get(player), player);
+					Set<Move> nextMoves = mValidator.validMoves(nextPos, cacheTicketmap.get(player), player);
 
-			// Get the score if this move was made, with the tickets surrounding moves
-			HashMap<ScoreElement, Float> scoreForMove = mScorer.score(nextPos, nextMoves, player, otherPlayerPositionsCurrently);
-			// Add it as a possible move
+					// Get the score if this move was made, with the tickets surrounding moves
+					HashMap<ScoreElement, Float> scoreForMove = mScorer.score(nextPos, nextMoves, player, otherPlayerPositionsCurrently);
+					// Add it as a possible move
 
-			scores.add(new MoveInfoHolder(move, scoreForMove, nextMoves, null, null));
+					return new MoveInfoHolder(move, scoreForMove, nextMoves, null, null);
+
+				}
+			};
+
+			completionService.submit(callable);
+
+
+		}
+
+		int received = 0;
+		boolean errors = false;
+
+		final long startMillis = System.currentTimeMillis();
+		final int threadCount = currentMoves.size();
+		while (received < threadCount && !errors) {
+			Future<MoveInfoHolder> resultFuture = null; //blocks if none available
+			try {
+				resultFuture = completionService.take();
+				MoveInfoHolder moveInfoHolder = resultFuture.get();
+				scores.add(moveInfoHolder);
+
+				received++;
+
+//				System.out.println("took " + (System.currentTimeMillis() - startMillis) + "ms to execute one look thread of size "+threadCount);
+			} catch (Exception e) {
+				//log
+				if(LOG_THREADS) System.err.println("Thread error 1 encountered");
+
+				errors = true;
+			}
+			if(received < threadCount && !errors){
+//				System.out.println("Not all one look threads completed yet (received:"+received+"/"+threadCount+")");
+			}
 		}
 
 		return scores;
@@ -138,7 +192,31 @@ public class FutureHelper {
 			mStartTime = System.currentTimeMillis();
 		}
 
-		threadExecutor = Executors.newFixedThreadPool(50);
+		finishUp = false;
+
+		final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
+		executor.schedule(new Runnable() {
+			@Override
+			public void run() {
+				System.err.println("10 seconds is up, stop what you're doing!");
+				oneLookThreadExecutor.shutdown();
+				finishUp = true;
+			}
+		}, 10, TimeUnit.SECONDS);
+
+		executor.schedule(new Runnable() {
+			@Override
+			public void run() {
+				if(!oneLookThreadExecutor.isTerminated()) {
+					System.err.println("processes should have stopped by now!!");
+					oneLookThreadExecutor.shutdownNow();
+				}
+			}
+		}, 14, TimeUnit.SECONDS);
+
+
+		threadExecutor = Executors.newCachedThreadPool();
+		oneLookThreadExecutor = Executors.newCachedThreadPool();
 
 		final Set<MoveInfoHolder> scores = calculateScores(currentMoves, currentPlayer, allPlayerTicketNumbers, allPlayerPositions, 0);
 
@@ -152,6 +230,9 @@ public class FutureHelper {
 		}else{
 			bestMoveHolder = getMinScoringMove(scores);
 		}
+
+		System.out.println("chose "+bestMoveHolder+" from "+scores);
+
 
 		System.out.println("Completed move decision in "+(System.currentTimeMillis() - mStartTime)+"ms");
 
@@ -174,6 +255,42 @@ public class FutureHelper {
 		Set<MoveInfoHolder> moveInfoList = new HashSet<MoveInfoHolder>();
 		// For each given move pretend to execute it
 		for (Move move : currentMoves){
+
+//			if(currentDepth == 0 && (move instanceof MoveDouble && ((MoveDouble)move).move1.target == 10 && ((MoveDouble)move).move2.target == 21)){
+//
+//			}else if(currentDepth == 0 && (move instanceof MoveDouble && ((MoveDouble)move).move1.target == 20 && ((MoveDouble)move).move2.target == 33)){
+//
+//			}else if(currentDepth == 0){
+//				continue;
+//			}
+//
+//			if(currentDepth == 1 && (move instanceof MoveDouble && ((MoveDouble)move).move1.target == 33 && ((MoveDouble)move).move2.target == 32)){
+//
+//			}else if(currentDepth == 1 && (move instanceof MoveDouble && ((MoveDouble)move).move1.target == 46 && ((MoveDouble)move).move2.target == 79)){
+//
+//			}else if(currentDepth == 1){
+//				continue;
+//			}
+//
+//			if(currentDepth == 2 && (move instanceof MoveTicket && ((MoveTicket)move).target == 44)){
+//
+//			}else if(currentDepth == 2 && (move instanceof MoveTicket && ((MoveTicket)move).target == 111)){
+//
+//			}else if(currentDepth == 2){
+//				continue;
+//			}
+//
+//			if(currentDepth == 3 && (move instanceof MoveTicket && ((MoveTicket)move).target == 32)){
+//
+//			}else if(currentDepth == 3){
+//				continue;
+//			}
+//
+//			if(currentDepth == 4 && (move instanceof MoveTicket && ((MoveTicket)move).target == 44)){
+//
+//			}else if(currentDepth == 4){
+//				continue;
+//			}
 
 			//first we create a map for all the current player positions
 			HashMap<Colour, Integer> postMovePositions = new HashMap<Colour, Integer>(allPlayerPositions);
@@ -238,9 +355,18 @@ public class FutureHelper {
 				Integer opponentPosition = postMovePositions.get(opponentColour);
 				final HashMap<Ticket, Integer> opponentTickets = postMoveTickets.get(opponentColour);
 
-				if(opponentPosition == 0){
+				if(opponentColour == Constants.MR_X_COLOUR){
+
+					if(mViewController.getRounds().get(mViewController.getRound()+currentDepth)) {
+						postMovePositions.get(opponentColour);
+					}else{
+						opponentPosition = mViewController.getPlayerLocation(Constants.MR_X_COLOUR);
+					}
+
 					//MrX's location is unknown so we're guessing it
-					opponentPosition = new Random().nextInt(190)+1;
+					if(opponentPosition == 0) {
+						opponentPosition = new Random().nextInt(190) + 1;
+					}
 				}
 
 				Set<Move> opponentValidMoves = mValidator.validMoves(opponentPosition, opponentTickets, opponentColour);
@@ -250,46 +376,60 @@ public class FutureHelper {
 
 				Set<MoveInfoHolder> moveInfoHolders = calculateScoresOneLook(opponentValidMoves, opponentColour, allPlayerTicketNumbers, postMovePositions);
 
+				if(finishUp){
+//					System.err.println("Exiting from level "+currentDepth+"@0");
+//					return null;
+				}
+
 				if(moveInfoHolders.size() == 0) {
-					System.err.println("moveInfoHolders size is 0!!!");
-					System.out.println("opponentColour = " + opponentColour);
-					System.out.println("opponentValidMoves = " + opponentValidMoves);
-					System.out.println("opponentPosition = " + opponentPosition);
-					System.out.println("opponentTickets = " + opponentTickets);
+//					System.err.println("moveInfoHolders size is 0 @depth:"+currentDepth);
+					if(LOG_DEPTH) System.out.println("exiting level "+currentDepth);
+					return moveInfoList;
+//					System.out.println("opponentColour = " + opponentColour);
+//					System.out.println("opponentValidMoves = " + opponentValidMoves);
+//					System.out.println("opponentPosition = " + opponentPosition);
+//					System.out.println("opponentTickets = " + opponentTickets);
+				}else {
+
+					Move bestMove;
+					if (opponentColour == Constants.MR_X_COLOUR) {
+						bestMove = getMaxScoringMove(moveInfoHolders).move;
+					} else {
+						bestMove = getMinScoringMove(moveInfoHolders).move;
+					}
+
+//					System.out.println("chose "+bestMove+" from "+moveInfoHolders);
+
+					final boolean isDouble2 = bestMove instanceof MoveDouble;
+					Ticket ticket21;
+					Ticket ticket22;
+					int endTarget2;
+
+					if (isDouble2) {
+						ticket21 = ((MoveDouble) bestMove).move1.ticket;
+						ticket22 = ((MoveDouble) bestMove).move2.ticket;
+						endTarget2 = ((MoveDouble) bestMove).move2.target;
+					} else {
+						ticket21 = ((MoveTicket) bestMove).ticket;
+						ticket22 = null;
+						endTarget2 = ((MoveTicket) bestMove).target;
+					}
+
+					postMoveTickets = updateFutureTicketNumbers(opponentColour, ticket21, ticket22, postMoveTickets);
+
+					// we now update their position so that by the end of the loop,
+					// all detectives will be converging on Mr X
+					//or
+					//Mr X will be as far away as possible from the detective
+					postMovePositions.replace(opponentColour, endTarget2);
 				}
-
-				Move bestMove;
-				if(opponentColour == Constants.MR_X_COLOUR){
-					bestMove = getMaxScoringMove(moveInfoHolders).move;
-				}else{
-					bestMove = getMinScoringMove(moveInfoHolders).move;
-				}
-
-
-				final boolean isDouble2 = bestMove instanceof MoveDouble;
-				Ticket ticket21;
-				Ticket ticket22;
-				int endTarget2;
-
-				if(isDouble2){
-					ticket21 = ((MoveDouble)bestMove).move1.ticket;
-					ticket22 = ((MoveDouble)bestMove).move2.ticket;
-					endTarget2 = ((MoveDouble)bestMove).move2.target;
-				}else{
-					ticket21 = ((MoveTicket)bestMove).ticket;
-					ticket22 = null;
-					endTarget2 = ((MoveTicket)bestMove).target;
-				}
-
-				postMoveTickets = updateFutureTicketNumbers(opponentColour, ticket21, ticket22, postMoveTickets);
-
-				// we now update their position so that by the end of the loop,
-				// all detectives will be converging on Mr X
-				//or
-				//Mr X will be as far away as possible from the detective
-				postMovePositions.replace(opponentColour, endTarget2);
 			}
 
+
+			if(finishUp){
+//				System.err.println("Exiting from level "+currentDepth+"@1");
+//				return null;
+			}
 
 			//now we have the current player's new position and all of their opponents positions
 			//we can do it again if we want
@@ -301,6 +441,10 @@ public class FutureHelper {
 
 		}
 
+		if(finishUp){
+//			System.err.println("Exiting from level "+currentDepth+"@2");
+//			return null;
+		}
 
 		//now we have scores for each of our moves... we should pick a subset and go deeper with them
 
@@ -313,6 +457,7 @@ public class FutureHelper {
 
 		quickSort(moveInfoListSubSet, 0, moveInfoListSubSet.size()-1);
 
+//		System.out.println("moveInfoListSubSet = " + moveInfoListSubSet);
 
 		while(moveInfoListSubSet.size() > MOVE_SUBSET_SIZE){
 			if(currentPlayer == Constants.MR_X_COLOUR){
@@ -329,7 +474,7 @@ public class FutureHelper {
 
 		//for each child move, find all of its scores, and set the move's score to its best child's score
 
-		if(currentDepth < 2) {
+		if(!finishUp && moveInfoListSubSet.size() > 0) {
 						CompletionService<MoveInfoHolder> completionService =
 					new ExecutorCompletionService<MoveInfoHolder>(threadExecutor);
 
@@ -344,17 +489,19 @@ public class FutureHelper {
 			final long startMillis = System.currentTimeMillis();
 
 			//first we remove the
-			if (currentDepth < 4) {
-				System.out.println("starting threads");
-				System.out.println("going to level "+(currentDepth+1));
+			if (currentDepth < 10) {
+				if(LOG_THREADS) System.out.println("starting threads");
+
+				if(LOG_DEPTH) System.out.println("going to level "+(currentDepth+1));
 				for (final MoveInfoHolder moveInfoHolder : moveInfoListSubSet) {
+
 
 					//Create callable instance
 					Callable<MoveInfoHolder> callable = new Callable<MoveInfoHolder>() {
 						@Override
 						public MoveInfoHolder call() throws Exception {
 
-							Set<MoveInfoHolder> childMoveInfoHolders = calculateScores(currentMovesFinal, currentPlayerFinal, allPlayerTicketNumbersFinal, allPlayerPositionsFinal, currentDepthFinal + 1);
+							Set<MoveInfoHolder> childMoveInfoHolders = calculateScores(moveInfoHolder.movesFromHere, currentPlayerFinal, moveInfoHolder.ticketNumbers, moveInfoHolder.playerPositions, currentDepthFinal + 1);
 
 							if (childMoveInfoHolders != null) {
 								MoveInfoHolder bestMoveHolder;
@@ -364,47 +511,57 @@ public class FutureHelper {
 									bestMoveHolder = getMinScoringMove(childMoveInfoHolders);
 								}
 
+//								System.out.println("chose "+bestMoveHolder+" from "+childMoveInfoHolders);
+
+								moveInfoHolder.nextMoveHolder = bestMoveHolder;
 								moveInfoHolder.scores = bestMoveHolder.scores;
 
-								return moveInfoHolder;
+							}else{
+								System.err.println("Not changing score for move");
 							}
 
-							return null;
+							return moveInfoHolder;
 						}
 					};
 
-					moveInfoList.remove(moveInfoHolder);
+//					moveInfoList.remove(moveInfoHolder);
+//					System.out.println("removing @depth:"+currentDepth+" "+moveInfoHolder);
 
 					//submit Callable tasks to be executed by thread pool
 					completionService.submit(callable);
 
 				}
 
+
 				int received = 0;
-				boolean errors = false;
 
 				final int threadCount = moveInfoListSubSet.size();
-				while (received < threadCount && !errors) {
+				while (received < threadCount) {
 					Future<MoveInfoHolder> resultFuture = null; //blocks if none available
 					try {
-						resultFuture = completionService.take();
-						MoveInfoHolder bestMoveHolder = resultFuture.get();
-						moveInfoList.add(bestMoveHolder);
+
 						received++;
 
-						System.out.println("took " + (System.currentTimeMillis() - startMillis) + "ms to execute thread at level " + currentDepth);
+						resultFuture = completionService.take();
+						MoveInfoHolder bestMoveHolder = resultFuture.get();
+
+						moveInfoList.add(bestMoveHolder);
+
+
+
+						if(LOG_THREADS) System.out.println("took " + (System.currentTimeMillis() - startMillis) + "ms to execute thread at level " + currentDepth);
+
 					} catch (Exception e) {
 						//log
-						System.err.println("Thread error encountered");
-						errors = true;
+						if(LOG_THREADS) System.err.println("thread error (level: "+currentDepth+" received:"+received+"/"+threadCount+")");
 					}
-					if(received < threadCount && !errors){
-						System.out.println("Not all threads completed yet (level: "+currentDepth+" received:"+received+"/"+threadCount+")");
+					if(received < threadCount){
+						if(LOG_THREADS) System.out.println("Not all threads completed yet (level: "+currentDepth+" received:"+received+"/"+threadCount+")");
 					}
 				}
-				System.out.println("Thread completed");
+				if(LOG_THREADS) System.out.println("Thread completed");
 			} else {
-				System.out.println("going to level "+(currentDepth+1));
+				if(LOG_DEPTH) System.out.println("going to level "+(currentDepth+1));
 				for (final MoveInfoHolder moveInfoHolder : moveInfoListSubSet) {
 
 					Set<MoveInfoHolder> childMoveInfoHolders = calculateScores(currentMovesFinal, currentPlayerFinal, allPlayerTicketNumbersFinal, allPlayerPositionsFinal, currentDepthFinal + 1);
@@ -417,6 +574,9 @@ public class FutureHelper {
 							bestMoveHolder = getMinScoringMove(childMoveInfoHolders);
 						}
 
+//						System.out.println("chose "+bestMoveHolder+" from "+childMoveInfoHolders);
+
+						moveInfoHolder.nextMoveHolder = bestMoveHolder;
 						moveInfoHolder.scores = bestMoveHolder.scores;
 
 						moveInfoList.add(moveInfoHolder);
@@ -424,12 +584,14 @@ public class FutureHelper {
 				}
 			}
 		}else{
-			System.out.println("not going to next level");
+			if(LOG_DEPTH)  System.out.println("not going to next level (while on "+currentDepth+")");
 			for (MoveInfoHolder moveInfoHolder : moveInfoListSubSet) {
 				moveInfoList.add(moveInfoHolder);
+//				System.out.println("adding "+moveInfoHolder);
 			}
 		}
 
+		if(LOG_DEPTH) System.out.println("exiting level "+currentDepth);
 
 		return moveInfoList;
 	}
