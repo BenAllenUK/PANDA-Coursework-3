@@ -1,5 +1,6 @@
 package helpers;
 
+import models.MoveDetails;
 import models.MoveInfoHolder;
 import models.ScoreElement;
 import scotlandyard.Colour;
@@ -35,8 +36,8 @@ public class FutureHelper {
 	private static final int MOVE_SUBSET_SIZE = 6;
 	public static final int MAX_THREAD_DEPTH = 4;
 	public static final int MAX_DEPTH = 2;
-	public static final boolean LOG_THREADS = false;
-	public static final boolean LOG_DEPTH = false;
+	public static final boolean LOG_THREADS = true;
+	public static final boolean LOG_DEPTH = true;
 	private final ScotlandYardMap mGameMap;
 	private final ScotlandYardView mViewController;
 	private final ScorerHelper mScorer;
@@ -241,6 +242,53 @@ public class FutureHelper {
 		mStartTime = 0;
 		return bestMoveHolder;
 	}
+	private float miniMaxAlorithm(Set<Move> currentMoves, Move moveTaken, boolean maximizingPlayer, Colour currentPlayer, HashMap<Colour, HashMap<Ticket, Integer>> allPlayerTicketNumbers, HashMap<Colour, Integer> allPlayerPositions, int currentDepth) {
+		float value, bestValue = 0;
+
+		if (currentDepth == MAX_DEPTH){
+			MoveDetails moveDetails = new MoveDetails(moveTaken);
+			Ticket ticket1 = moveDetails.getTicket1();
+			Ticket ticket2 = moveDetails.getTicket2();
+			int endTarget = moveDetails.getEndTarget();
+
+			HashMap<ScoreElement, Float> scoreForMove = mScorer.score(endTarget, currentMoves, currentPlayer, allPlayerPositions);
+
+			return scoreForMove.get(ScoreElement.DISTANCE);
+		}
+
+		Set<Move> postMoves;
+		HashMap<Colour, Integer> postMovePositions = new HashMap<Colour, Integer>(allPlayerPositions);
+		HashMap<Colour,HashMap<Ticket, Integer>> postMoveTickets = new HashMap<Colour,HashMap<Ticket, Integer>>(allPlayerTicketNumbers);
+
+		if(maximizingPlayer) {
+			bestValue = Integer.MIN_VALUE;
+		} else {
+			bestValue = Integer.MAX_VALUE;
+		}
+
+		for (Move move : currentMoves) {
+			// If its a double move then explore its target otherwise treat it as standard ticket
+			MoveDetails moveDetails = new MoveDetails(move);
+			Ticket ticket1 = moveDetails.getTicket1();
+			Ticket ticket2 = moveDetails.getTicket2();
+			int endTarget = moveDetails.getEndTarget();
+
+			postMoveTickets = updateFutureTicketNumbers(currentPlayer, ticket1, ticket2, postMoveTickets);
+			postMoves = mValidator.validMoves(endTarget, postMoveTickets.get(currentPlayer), currentPlayer);
+			postMovePositions.replace(currentPlayer, endTarget);
+
+			
+
+			value = miniMaxAlorithm(postMoves, move, !maximizingPlayer, currentPlayer, postMoveTickets, postMovePositions, currentDepth + 1);
+
+			if(maximizingPlayer) {
+				bestValue = Math.max(bestValue, value);
+			} else {
+				bestValue = Math.min(bestValue, value);
+			}
+		}
+		return bestValue;
+	}
 
 	/**
 	 * Get the scores of all the future moves for a given player
@@ -308,8 +356,7 @@ public class FutureHelper {
 			}
 
 			final boolean isDouble = move instanceof MoveDouble;
-			Ticket ticket1;
-			Ticket ticket2;
+			Ticket ticket1, ticket2;
 
 			if(isDouble){
 				ticket1 = ((MoveDouble)move).move1.ticket;
