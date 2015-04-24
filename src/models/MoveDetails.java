@@ -31,7 +31,11 @@ public class MoveDetails {
         return endTarget;
     }
 
-    private MoveDetails invoke() {
+	public Move getMove() {
+		return move;
+	}
+
+	private MoveDetails invoke() {
         final boolean isDouble = move instanceof MoveDouble;
         if(isDouble){
             ticket1 = ((MoveDouble)move).move1.ticket;

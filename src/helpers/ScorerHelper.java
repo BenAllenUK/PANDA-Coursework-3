@@ -2,6 +2,7 @@ package helpers;
 
 import models.DataPosition;
 import models.DataSave;
+import models.MiniMaxState;
 import models.ScoreElement;
 import scotlandyard.Colour;
 import scotlandyard.Move;
@@ -149,5 +150,7 @@ public class ScorerHelper {
 		return distanceScore;
     }
 
-
+	public int score(final MiniMaxState nextPlayersBestState) {
+		return 0;
+	}
 }

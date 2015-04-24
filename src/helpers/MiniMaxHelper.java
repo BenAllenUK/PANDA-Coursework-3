@@ -1,5 +1,6 @@
 package helpers;
 
+import models.MiniMaxState;
 import models.MoveDetails;
 import models.MoveInfoHolder;
 import models.ScoreElement;
@@ -33,41 +34,41 @@ public class MiniMaxHelper {
 		this.mValidator = new ValidMoves(graph);
 	}
 
-	public MoveInfoHolder minimax(final Colour player, final MoveInfoHolder lastMove, final HashMap<Colour,HashMap<Ticket, Integer>> tickets, final HashMap<Colour, Integer> positions){
+	public MiniMaxState minimax(MiniMaxState state){
 		boolean atMaxDepth = false;
 		if(atMaxDepth){
-			return lastMove;
+			//score where we are
+			state.score();
+			return state;
 		}else{
-			MoveInfoHolder bestMove = null;
+			MiniMaxState bestState = null;
 
-			MoveDetails lastMoveDetails = new MoveDetails(lastMove.move);
+			MoveDetails lastMoveDetails = new MoveDetails(state);
 
-			final Set<Move> moves = mValidator.validMoves(lastMoveDetails.getEndTarget(), tickets.get(player), player);
+			final Set<Move> moves = mValidator.validMoves(lastMoveDetails.getEndTarget(), state.tickets.get(state.currentPlayer), state.currentPlayer);
 
 			for(Move move : moves){
+
 				MoveDetails moveDetails = new MoveDetails(move);
-				HashMap<Colour,HashMap<Ticket, Integer>> futureTickets = updateFutureTicketNumbers(player, moveDetails.getTicket1(), moveDetails.getTicket2(), tickets);
-				HashMap<Colour, Integer> futurePositions = (HashMap<Colour, Integer>) positions.clone();
-				futurePositions.replace(player, moveDetails.getEndTarget());
 
-				final MoveInfoHolder moveInfoHolder = new MoveInfoHolder(move, null, null, null ,null);
-				MoveInfoHolder bestMoveChild = minimax(nextPlayer(player), moveInfoHolder, futureTickets, futurePositions);
 
-				if(bestMove == null){
-					bestMove = bestMoveChild;
-				}else if(player == Constants.MR_X_COLOUR){
-					if(bestMoveChild.scores.get(ScoreElement.DISTANCE) > bestMove.scores.get(ScoreElement.DISTANCE)){
-						bestMove = bestMoveChild;
+				MiniMaxState nextPlayersBestState = minimax(state.applyMove(moveDetails));
+
+				if(bestState == null){
+					bestState = nextPlayersBestState;
+				}else if(state.currentPlayer == Constants.MR_X_COLOUR){
+					if(nextPlayersBestState.currentScore > bestState.currentScore){
+						bestState = nextPlayersBestState;
 					}
 				}else{
-					if(bestMoveChild.scores.get(ScoreElement.DISTANCE) < bestMove.scores.get(ScoreElement.DISTANCE)){
-						bestMove = bestMoveChild;
+					if(nextPlayersBestState.currentScore < bestState.currentScore){
+						bestState = nextPlayersBestState;
 					}
 				}
 			}
 
 
-			return bestMove;
+			return bestState;
 		}
 	}
 
@@ -75,64 +76,6 @@ public class MiniMaxHelper {
 		return null;
 	}
 
-	/**
-	 * Get tickets for a player taking into account whether they used a double move or not
-	 * @param firstTicket the first ticket or the only ticket
-	 * @param secondTicket (optional) the second ticket if a double move was used, null otherwise.
-	 * @return each ticket with the number the player has left for the future
-	 */
-	private HashMap<Colour,HashMap<Ticket, Integer>> updateFutureTicketNumbers(Colour player, Ticket firstTicket, Ticket secondTicket, HashMap<Colour,HashMap<Ticket, Integer>> playerTicketsMap) {
 
-		HashMap<Colour,HashMap<Ticket, Integer>> out = new HashMap<Colour,HashMap<Ticket, Integer>>();
-
-		Ticket[] ticketTypes = new Ticket[]{
-				Ticket.Bus,
-				Ticket.Taxi,
-				Ticket.Underground,
-				Ticket.Double,
-				Ticket.Secret};
-
-		Iterator it = playerTicketsMap.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry)it.next();
-
-			Colour colour = (Colour) pair.getKey();
-			HashMap<Ticket, Integer> map = (HashMap<Ticket, Integer>) pair.getValue();
-
-			out.put(colour, (HashMap<Ticket, Integer>) map.clone());
-
-//				it.remove(); // avoids a ConcurrentModificationException
-		}
-
-		final HashMap<Ticket, Integer> playerTickets = out.get(player);
-
-		final HashMap<Ticket, Integer> mrXTickets = out.get(Constants.MR_X_COLOUR);
-
-
-		// Loop through all tickets and get their quantity
-		for(Ticket ticketType : ticketTypes) {
-			// Get the players ticket number
-			int ticketNumber = playerTickets.get(ticketType);
-			// If the the first ticket used is selected then decrease its number in the future
-			if(firstTicket == ticketType) {
-				ticketNumber--;
-
-				if(player != Constants.MR_X_COLOUR && mrXTickets != null){
-					mrXTickets.replace(ticketType, mrXTickets.get(ticketType)+1);
-				}
-
-			}
-			// If the second ticket used is selected then decreases its number in the future
-			if(secondTicket == ticketType){
-				ticketNumber--;
-			}
-			// If there is a second ticket then reduce the double move ticket numbers
-			if(ticketType == Ticket.Double && secondTicket != null){
-				ticketNumber--;
-			}
-			playerTickets.replace(ticketType, ticketNumber);
-		}
-		return out;
-	}
 
 }
