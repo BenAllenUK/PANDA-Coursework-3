@@ -3,15 +3,9 @@ package models;
 import helpers.Constants;
 import helpers.ScorerHelper;
 import helpers.ValidMoves;
-import scotlandyard.Colour;
-import scotlandyard.Move;
-import scotlandyard.MoveTicket;
-import scotlandyard.Ticket;
+import scotlandyard.*;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by rory on 24/04/15.
@@ -26,7 +20,7 @@ public class MiniMaxState {
 	private int currentScore;
 	private int currentDepth;
 
-	public void score(ScorerHelper scorer, ValidMoves validator) {
+	public void score(final ScorerHelper scorer, final ValidMoves validator) {
 		//score based on current round
 		MoveDetails lastMoveDetails = new MoveDetails(lastMove);
 
@@ -50,7 +44,7 @@ public class MiniMaxState {
 
 	}
 
-	public MiniMaxState applyMove(final MoveDetails moveDetails) {
+	public MiniMaxState applyMove(final MoveDetails moveDetails, final List<Colour> players) {
 		MiniMaxState newState = new MiniMaxState();
 
 		final Colour currentPlayer = moveDetails.getMove().colour;
@@ -63,8 +57,10 @@ public class MiniMaxState {
 		HashMap<Colour, Integer> futurePositions = (HashMap<Colour, Integer>) positions.clone();
 		futurePositions.replace(currentPlayer, moveDetails.getEndTarget());
 
+		// Get the next player
+		Colour nextPlayer = nextPlayer(currentPlayer, players);
+
 		// Setup the new state
-		Colour nextPlayer = nextPlayer(currentPlayer);
 		newState.setCurrentPlayer(nextPlayer);
 		newState.setLastMove(MoveTicket.instance(nextPlayer, null, positions.get(nextPlayer)));
 		newState.setTickets(futureTickets);
@@ -73,8 +69,20 @@ public class MiniMaxState {
 
 		return newState;
 	}
-	private Colour nextPlayer(final Colour player) {
-		return null;
+
+	/**
+	 * Acts a rotating stack and gets the next player in the cycle
+	 * @param player the current player
+	 * @param players list of all players
+	 * @return the next player
+	 */
+	private Colour nextPlayer(final Colour player, List<Colour> players) {
+		int position = players.indexOf(player);
+		if(position + 1 == players.size()){
+			return players.get(0);
+		} else {
+			return players.get(position + 1);
+		}
 	}
 	/**
 	 * Get tickets for a player taking into account whether they used a double move or not

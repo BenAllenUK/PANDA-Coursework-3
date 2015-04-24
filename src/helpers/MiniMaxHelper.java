@@ -58,7 +58,7 @@ public class MiniMaxHelper {
 
 				MoveDetails moveDetails = new MoveDetails(move);
 
-				MiniMaxState nextPlayersBestState = minimax(state.applyMove(moveDetails));
+				MiniMaxState nextPlayersBestState = minimax(state.applyMove(moveDetails, mViewController.getPlayers()));
 
 				if(bestState == null){
 					bestState = nextPlayersBestState;
