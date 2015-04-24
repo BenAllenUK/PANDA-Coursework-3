@@ -1,31 +1,46 @@
 package models;
 
 import helpers.Constants;
+import helpers.ScorerHelper;
+import helpers.ValidMoves;
 import scotlandyard.Colour;
 import scotlandyard.Move;
+import scotlandyard.MoveTicket;
 import scotlandyard.Ticket;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by rory on 24/04/15.
  */
 public class MiniMaxState {
-	public HashMap<Colour,HashMap<Ticket, Integer>> tickets;
-	public HashMap<Colour, Integer> positions;
-	public Colour currentPlayer;
-	public Move lastMove;
-	public int currentScore;
 
-	public void score() {
+
+	private HashMap<Colour,HashMap<Ticket, Integer>> tickets;
+	private HashMap<Colour, Integer> positions;
+	private Colour currentPlayer;
+	private Move lastMove;
+	private int currentScore;
+	private int currentDepth;
+
+	public void score(ScorerHelper scorer, ValidMoves validator) {
 		//score based on current round
-		if(currentPlayer == Constants.MR_X_COLOUR){
-			//currentScore = score(this);
-		}else{
-			//currentScore += score(this);
-		}
+		MoveDetails lastMoveDetails = new MoveDetails(lastMove);
+
+		final Set<Move> moves = validator.validMoves(
+				lastMoveDetails.getEndTarget(),
+				tickets.get(currentPlayer),
+				currentPlayer
+		);
+
+		scorer.score(positions.get(currentPlayer),
+				moves,
+				currentPlayer,
+				positions);
+
 
 		//let's test some cases:
 
@@ -38,19 +53,29 @@ public class MiniMaxState {
 	public MiniMaxState applyMove(final MoveDetails moveDetails) {
 		MiniMaxState newState = new MiniMaxState();
 
-		final Colour playerColour = moveDetails.getMove().colour;
-		HashMap<Colour,HashMap<Ticket, Integer>> futureTickets = updateFutureTicketNumbers(playerColour, moveDetails.getTicket1(), moveDetails.getTicket2(), tickets);
+		final Colour currentPlayer = moveDetails.getMove().colour;
+		HashMap<Colour,HashMap<Ticket, Integer>> futureTickets = updateFutureTicketNumbers(
+				currentPlayer,
+				moveDetails.getTicket1(),
+				moveDetails.getTicket2(),
+				tickets
+		);
 		HashMap<Colour, Integer> futurePositions = (HashMap<Colour, Integer>) positions.clone();
-		futurePositions.replace(playerColour, moveDetails.getEndTarget());
+		futurePositions.replace(currentPlayer, moveDetails.getEndTarget());
 
-		newState.currentPlayer = playerColour;
-		newState.lastMove = moveDetails.getMove();
-		newState.tickets = futureTickets;
-		newState.positions = futurePositions;
+		// Setup the new state
+		Colour nextPlayer = nextPlayer(currentPlayer);
+		newState.setCurrentPlayer(nextPlayer);
+		newState.setLastMove(MoveTicket.instance(nextPlayer, null, positions.get(nextPlayer)));
+		newState.setTickets(futureTickets);
+		newState.setPositions(futurePositions);
+		newState.setCurrentDepth(currentDepth + 1);
 
 		return newState;
 	}
-
+	private Colour nextPlayer(final Colour player) {
+		return null;
+	}
 	/**
 	 * Get tickets for a player taking into account whether they used a double move or not
 	 * @param firstTicket the first ticket or the only ticket
@@ -60,13 +85,6 @@ public class MiniMaxState {
 	private HashMap<Colour,HashMap<Ticket, Integer>> updateFutureTicketNumbers(Colour player, Ticket firstTicket, Ticket secondTicket, HashMap<Colour,HashMap<Ticket, Integer>> playerTicketsMap) {
 
 		HashMap<Colour,HashMap<Ticket, Integer>> out = new HashMap<Colour,HashMap<Ticket, Integer>>();
-
-		Ticket[] ticketTypes = new Ticket[]{
-				Ticket.Bus,
-				Ticket.Taxi,
-				Ticket.Underground,
-				Ticket.Double,
-				Ticket.Secret};
 
 		Iterator it = playerTicketsMap.entrySet().iterator();
 		while (it.hasNext()) {
@@ -81,12 +99,11 @@ public class MiniMaxState {
 		}
 
 		final HashMap<Ticket, Integer> playerTickets = out.get(player);
-
 		final HashMap<Ticket, Integer> mrXTickets = out.get(Constants.MR_X_COLOUR);
 
 
 		// Loop through all tickets and get their quantity
-		for(Ticket ticketType : ticketTypes) {
+		for(Ticket ticketType : Ticket.values()) {
 			// Get the players ticket number
 			int ticketNumber = playerTickets.get(ticketType);
 			// If the the first ticket used is selected then decrease its number in the future
@@ -109,5 +126,68 @@ public class MiniMaxState {
 			playerTickets.replace(ticketType, ticketNumber);
 		}
 		return out;
+	}
+
+	@Override
+	public String toString() {
+		String prefix = "";
+		for (int i =0; i < currentDepth; i++){
+			prefix += "	";
+		}
+		return prefix + "MiniMaxState{ \n" +
+				"currentPlayer=" + currentPlayer +
+				",\n lastMove=" + lastMove +
+				",\n currentScore=" + currentScore +
+				",\n currentDepth=" + currentDepth +
+				"}\n";
+	}
+
+	public Move getLastMove() {
+		return lastMove;
+	}
+
+	public void setLastMove(Move lastMove) {
+		this.lastMove = lastMove;
+	}
+
+	public int getCurrentScore() {
+		return currentScore;
+	}
+
+	public void setCurrentScore(int currentScore) {
+		this.currentScore = currentScore;
+	}
+
+	public Colour getCurrentPlayer() {
+		return currentPlayer;
+	}
+
+	public void setCurrentPlayer(Colour currentPlayer) {
+		this.currentPlayer = currentPlayer;
+	}
+	public HashMap<Colour, HashMap<Ticket, Integer>> getTickets() {
+		return tickets;
+	}
+	public HashMap<Ticket, Integer> getTicketsForCurrentPlayer() {
+		return tickets.get(currentPlayer);
+	}
+
+	public void setTickets(HashMap<Colour, HashMap<Ticket, Integer>> tickets) {
+		this.tickets = tickets;
+	}
+	public HashMap<Colour, Integer> getPositions() {
+		return positions;
+	}
+
+	public void setPositions(HashMap<Colour, Integer> positions) {
+		this.positions = positions;
+	}
+
+	public int getCurrentDepth() {
+		return currentDepth;
+	}
+
+	public void setCurrentDepth(int currentDepth) {
+		this.currentDepth = currentDepth;
 	}
 }

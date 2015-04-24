@@ -21,6 +21,7 @@ import java.util.Set;
  * Created by rory on 23/04/15.
  */
 public class MiniMaxHelper {
+	private static final int MAX_DEPTH = 5;
 	private final ScotlandYardView mViewController;
 	private final ScotlandYardMap mGameMap;
 	private final ScorerHelper mScorer;
@@ -35,33 +36,38 @@ public class MiniMaxHelper {
 	}
 
 	public MiniMaxState minimax(MiniMaxState state){
-		boolean atMaxDepth = false;
+		boolean atMaxDepth = state.getCurrentDepth() == MAX_DEPTH;
 		if(atMaxDepth){
 			//score where we are
-			state.score();
+			state.score(mScorer, mValidator);
 			return state;
 		}else{
+			System.out.println(state.toString());
+
 			MiniMaxState bestState = null;
 
-			MoveDetails lastMoveDetails = new MoveDetails(state);
+			MoveDetails lastMoveDetails = new MoveDetails(state.getLastMove());
 
-			final Set<Move> moves = mValidator.validMoves(lastMoveDetails.getEndTarget(), state.tickets.get(state.currentPlayer), state.currentPlayer);
+			final Set<Move> moves = mValidator.validMoves(
+					lastMoveDetails.getEndTarget(),
+					state.getTicketsForCurrentPlayer(),
+					state.getCurrentPlayer()
+			);
 
 			for(Move move : moves){
 
 				MoveDetails moveDetails = new MoveDetails(move);
 
-
 				MiniMaxState nextPlayersBestState = minimax(state.applyMove(moveDetails));
 
 				if(bestState == null){
 					bestState = nextPlayersBestState;
-				}else if(state.currentPlayer == Constants.MR_X_COLOUR){
-					if(nextPlayersBestState.currentScore > bestState.currentScore){
+				}else if(state.getCurrentPlayer() == Constants.MR_X_COLOUR){
+					if(nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()){
 						bestState = nextPlayersBestState;
 					}
 				}else{
-					if(nextPlayersBestState.currentScore < bestState.currentScore){
+					if(nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()){
 						bestState = nextPlayersBestState;
 					}
 				}
@@ -72,9 +78,7 @@ public class MiniMaxHelper {
 		}
 	}
 
-	private Colour nextPlayer(final Colour player) {
-		return null;
-	}
+
 
 
 

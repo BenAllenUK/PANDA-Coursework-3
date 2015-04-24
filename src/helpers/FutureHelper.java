@@ -14,14 +14,7 @@ import scotlandyard.ScotlandYardView;
 import scotlandyard.Ticket;
 import solution.ScotlandYardMap;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -58,6 +51,7 @@ public class FutureHelper {
 		this.mScorer = mScorer;
 		this.mGraph = graph;
 		this.mValidator = new ValidMoves(mGraph);
+
 	}
 
 	public MoveInfoHolder getMinScoringMove(Set<MoveInfoHolder> futureMovesAndScores) {
@@ -273,15 +267,22 @@ public class FutureHelper {
 			Ticket ticket2 = moveDetails.getTicket2();
 			int endTarget = moveDetails.getEndTarget();
 
-			postMoveTickets = updateFutureTicketNumbers(currentPlayer, ticket1, ticket2, postMoveTickets);
-			postMoves = mValidator.validMoves(endTarget, postMoveTickets.get(currentPlayer), currentPlayer);
+			HashMap<Colour, HashMap<Ticket, Integer>> moveTicketsCurrentPlayer = updateFutureTicketNumbers(currentPlayer, ticket1, ticket2, postMoveTickets);
+			Set<Move> movesCurrentPlayer = mValidator.validMoves(endTarget, postMoveTickets.get(currentPlayer), currentPlayer);
+			HashMap<Colour, Integer> movePositionsCurrentPlayer = new HashMap<Colour, Integer>(postMovePositions);
 			postMovePositions.replace(currentPlayer, endTarget);
 
-			
+			List<Colour> oppPlayers;
 
-			value = miniMaxAlorithm(postMoves, move, !maximizingPlayer, currentPlayer, postMoveTickets, postMovePositions, currentDepth + 1);
+			if(currentPlayer != Constants.MR_X_COLOUR){
+				oppPlayers = new LinkedList<Colour>(mViewController.getPlayers());
+			} else {
+				oppPlayers = new LinkedList<Colour>(mViewController.getPlayers());
+				oppPlayers.remove(currentPlayer);
+			}
 
-			if(maximizingPlayer) {
+			loopDetectives(oppPlayers, allPlayerTicketNumbers, allPlayerPositions,);
+			if (maximizingPlayer) {
 				bestValue = Math.max(bestValue, value);
 			} else {
 				bestValue = Math.min(bestValue, value);
@@ -289,7 +290,35 @@ public class FutureHelper {
 		}
 		return bestValue;
 	}
+	private float loopDetectives(List<Colour> oppPlayers, HashMap<Colour, HashMap<Ticket, Integer>> allPlayerTicketNumbers, HashMap<Colour, Integer> allPlayerPositions,){
+		if(oppPlayers.size() == 0){
 
+
+			value = miniMaxAlorithm(postMoves, move, !maximizingPlayer, currentPlayer, postMoveTickets, postMovePositions, currentDepth + 1);
+			return value;
+
+		} else {
+			Colour thisPlayer = oppPlayers.get(0);
+
+			Set<Move> movesCurrentPlayer = mValidator.validMoves(endTarget, postMoveTickets.get(currentPlayer), currentPlayer);
+
+			for(moves that this detecteve has){
+				HashMap<Colour, HashMap<Ticket, Integer>> moveTicketsCurrentPlayer = updateFutureTicketNumbers(currentPlayer, ticket1, ticket2, postMoveTickets);
+
+				HashMap<Colour, Integer> movePositionsCurrentPlayer = new HashMap<Colour, Integer>(postMovePositions);
+				postMovePositions.replace(currentPlayer, endTarget);
+
+				loopDetectives(oppPlayers.subList(1, oppPlayers.size()), allPlayerTicketNumbers, allPlayerPositions);
+			}
+
+			//
+
+
+		}
+
+
+
+	}
 	/**
 	 * Get the scores of all the future moves for a given player
 	 * @param currentMoves the moves they currently have available
