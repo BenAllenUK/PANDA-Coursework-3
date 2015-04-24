@@ -20,6 +20,7 @@ public class MiniMaxState {
 	private int currentScore;
 	private int currentDepth;
 
+	// TODO: maybe make scorer and validator static, unsure as to whether this would cause memory issues
 	public void score(final ScorerHelper scorer, final ValidMoves validator) {
 		//score based on current round
 		MoveDetails lastMoveDetails = new MoveDetails(lastMove);
@@ -44,6 +45,8 @@ public class MiniMaxState {
 
 	}
 
+	// TODO: unsure as to whether it is good to pass through a list of players
+	// TODO: would be better if we could use the viewcontroller in here, but then too much memory taken up #memoryIssues
 	public MiniMaxState applyMove(final MoveDetails moveDetails, final List<Colour> players) {
 		MiniMaxState newState = new MiniMaxState();
 
@@ -62,6 +65,10 @@ public class MiniMaxState {
 
 		// Setup the new state
 		newState.setCurrentPlayer(nextPlayer);
+
+		// TODO: hmm, so we shouldn't pass in null. How else do we get the next players last ticket used effectively?
+		// TODO: idea is a HashMap<Colour, Ticket> {Player name, the last ticket they used}
+
 		newState.setLastMove(MoveTicket.instance(nextPlayer, null, positions.get(nextPlayer)));
 		newState.setTickets(futureTickets);
 		newState.setPositions(futurePositions);
