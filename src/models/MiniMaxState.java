@@ -1,11 +1,15 @@
 package models;
 
 import helpers.Constants;
-import helpers.ScorerHelper;
-import helpers.ValidMoves;
-import scotlandyard.*;
+import scotlandyard.Colour;
+import scotlandyard.Move;
+import scotlandyard.MoveTicket;
+import scotlandyard.Ticket;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by rory on 24/04/15.
@@ -19,31 +23,6 @@ public class MiniMaxState {
 	private Move lastMove;
 	private int currentScore;
 	private int currentDepth;
-
-	// TODO: maybe make scorer and validator static, unsure as to whether this would cause memory issues
-	public void score(final ScorerHelper scorer, final ValidMoves validator) {
-		//score based on current round
-		MoveDetails lastMoveDetails = new MoveDetails(lastMove);
-
-		final Set<Move> moves = validator.validMoves(
-				lastMoveDetails.getEndTarget(),
-				tickets.get(currentPlayer),
-				currentPlayer
-		);
-
-		scorer.score(positions.get(currentPlayer),
-				moves,
-				currentPlayer,
-				positions);
-
-
-		//let's test some cases:
-
-		//Mr X, then D1, D2, D3
-		//D3 scores 3 away from Mr X
-
-
-	}
 
 	// TODO: unsure as to whether it is good to pass through a list of players
 	// TODO: would be better if we could use the viewcontroller in here, but then too much memory taken up #memoryIssues
@@ -91,6 +70,7 @@ public class MiniMaxState {
 			return players.get(position + 1);
 		}
 	}
+
 	/**
 	 * Get tickets for a player taking into account whether they used a double move or not
 	 * @param firstTicket the first ticket or the only ticket

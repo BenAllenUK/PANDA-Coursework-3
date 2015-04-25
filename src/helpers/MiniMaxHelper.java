@@ -2,19 +2,12 @@ package helpers;
 
 import models.MiniMaxState;
 import models.MoveDetails;
-import models.MoveInfoHolder;
-import models.ScoreElement;
-import scotlandyard.Colour;
 import scotlandyard.Graph;
 import scotlandyard.Move;
 import scotlandyard.Route;
 import scotlandyard.ScotlandYardView;
-import scotlandyard.Ticket;
 import solution.ScotlandYardMap;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,7 +32,19 @@ public class MiniMaxHelper {
 		boolean atMaxDepth = state.getCurrentDepth() == MAX_DEPTH;
 		if(atMaxDepth){
 			//score where we are
-			state.score(mScorer, mValidator);
+			MoveDetails lastMoveDetails = new MoveDetails(state.getLastMove());
+
+			final Set<Move> moves = mValidator.validMoves(
+					lastMoveDetails.getEndTarget(),
+					state.getTickets().get(state.getCurrentPlayer()),
+					state.getCurrentPlayer()
+			);
+
+			mScorer.score(state.getPositions().get(state.getCurrentPlayer()),
+					moves,
+					state.getCurrentPlayer(),
+					state.getPositions());
+
 			return state;
 		}else{
 			System.out.println(state.toString());
