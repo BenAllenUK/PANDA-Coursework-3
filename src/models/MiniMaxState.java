@@ -12,7 +12,7 @@ import java.util.Map;
  * Created by rory on 24/04/15.
  */
 public class MiniMaxState {
-
+	private final Colour rootPlayer;
 	private HashMap<Colour,HashMap<Ticket, Integer>> tickets;
 	private HashMap<Colour, Integer> positions;
 	private Colour currentPlayer;
@@ -20,10 +20,14 @@ public class MiniMaxState {
 	private int currentScore;
 	private int currentDepth;
 
-	public MiniMaxState (Colour currentPlayer, HashMap<Colour, Integer> positions, HashMap<Colour,HashMap<Ticket, Integer>> tickets) {
+	public int alpha = Integer.MIN_VALUE;
+	public int beta = Integer.MAX_VALUE;
+
+	public MiniMaxState (Colour currentPlayer, HashMap<Colour, Integer> positions, HashMap<Colour,HashMap<Ticket, Integer>> tickets, Colour rootPlayer) {
 		this.currentPlayer = currentPlayer;
 		this.positions = positions;
 		this.tickets = tickets;
+		this.rootPlayer = rootPlayer;
 		lastMoves = new HashMap<Colour, MoveDetails>();
 	}
 
@@ -41,11 +45,19 @@ public class MiniMaxState {
 		HashMap<Colour, Integer> futurePositions = (HashMap<Colour, Integer>) positions.clone();
 		futurePositions.replace(currentPlayer, moveDetails.getEndTarget());
 
-		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets);
+		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer);
 
+		final HashMap<Colour, MoveDetails> lastMovesClone = new HashMap<Colour, MoveDetails>();
+
+		for(HashMap.Entry<Colour, MoveDetails> entry : lastMoves.entrySet()){
+			lastMovesClone.put(entry.getKey(), entry.getValue().clone());
+		}
 		// Setup the new state
-		newState.setLastMoveMap(lastMoves);
+		newState.setLastMoveMap(lastMovesClone);
 		newState.setCurrentDepth(currentDepth + 1);
+
+		newState.alpha = alpha;
+		newState.beta = beta;
 
 		return newState;
 	}
@@ -106,15 +118,21 @@ public class MiniMaxState {
 
 	@Override
 	public String toString() {
+		return "MiniMaxState{" +
+				"currentPlayer=" + currentPlayer +
+				", currentScore=" + currentScore +
+				", lastMove=" + lastMoves.get(currentPlayer) +
+				'}';
+	}
+
+	public String indentedString() {
 		String prefix = "";
 		for (int i =0; i < currentDepth; i++){
 			prefix += "	";
 		}
 		return prefix + "MiniMaxState{ \n" +
 				"currentPlayer=" + currentPlayer +
-				",\n lastMoves=" + lastMoves +
 				",\n currentScore=" + currentScore +
-				",\n currentDepth=" + currentDepth +
 				"}\n";
 	}
 
@@ -167,5 +185,11 @@ public class MiniMaxState {
 		this.currentDepth = currentDepth;
 	}
 
+	public Colour getRootPlayerColour() {
+		return rootPlayer;
+	}
 
+	public void setLastMove(final Colour player, final MoveDetails moveDetails) {
+		lastMoves.put(player, moveDetails);
+	}
 }

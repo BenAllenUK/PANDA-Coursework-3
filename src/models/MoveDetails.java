@@ -49,6 +49,11 @@ public class MoveDetails {
         return this;
     }
 
+	public MoveDetails clone(){
+		MoveDetails clone = new MoveDetails(move);
+		return clone;
+	}
+
 	@Override
 	public String toString() {
 		return "MoveDetails{" +

@@ -19,7 +19,7 @@ public class ValidMoves {
 		}
     }
 
-    public Set<MoveTicket> getAvailableSingleMoves(Colour playerColour, int location, Map<Ticket, Integer> tickets) {
+    public Set<MoveTicket> getAvailableSingleMoves(Colour playerColour, int location, Map<Ticket, Integer> tickets, HashMap<Colour, Integer> positions) {
 
         Set<MoveTicket> moves = new HashSet<MoveTicket>();
 
@@ -27,20 +27,34 @@ public class ValidMoves {
 		try {
 			for (Edge<Integer, Route> edge : edges) {
 
-				Integer firstNodePos = null;
+				Integer targetPosition = null;
 				if (edge.source() == location) {
-					firstNodePos = edge.target();
+					targetPosition = edge.target();
 				} else if (edge.target() == location) {
-					firstNodePos = edge.source();
+					targetPosition = edge.source();
+				}
+
+				//this is not a valid move if a detective occupies this spot
+				if(positions.containsValue(targetPosition)){
+					boolean shouldContinue = false;
+					for(HashMap.Entry<Colour, Integer> entry : positions.entrySet()){
+						if(Objects.equals(entry.getValue(), targetPosition) && entry.getKey() != Constants.MR_X_COLOUR){
+							shouldContinue = true;
+							break;
+						}
+					}
+					if(shouldContinue){
+						continue;
+					}
 				}
 
 				Ticket requiredTicket = Ticket.fromRoute(edge.data());
 				if (tickets.containsKey(requiredTicket) && tickets.get(requiredTicket) > 0) {
-					moves.add(MoveTicket.instance(playerColour, requiredTicket, firstNodePos));
+					moves.add(MoveTicket.instance(playerColour, requiredTicket, targetPosition));
 				}
 
 				if (tickets.containsKey(Ticket.Secret) && tickets.get(Ticket.Secret) > 0) {
-					moves.add(MoveTicket.instance(playerColour, Ticket.Secret, firstNodePos));
+					moves.add(MoveTicket.instance(playerColour, Ticket.Secret, targetPosition));
 				}
 			}
 		}catch (NullPointerException e){
@@ -50,13 +64,13 @@ public class ValidMoves {
         return moves;
     }
 
-    public Set<Move> validMoves(int playerPosition, Map<Ticket, Integer> currentTickets, Colour currentPlayer) {
+    public Set<Move> validMoves(int playerPosition, Map<Ticket, Integer> currentTickets, Colour currentPlayer, HashMap<Colour, Integer> positions) {
 
         int playerPos = playerPosition;
 
         Set<Move> validMoves = new HashSet<Move>();
 
-        Set<MoveTicket> firstMoves = getAvailableSingleMoves(currentPlayer, playerPos, currentTickets);
+        Set<MoveTicket> firstMoves = getAvailableSingleMoves(currentPlayer, playerPos, currentTickets, positions);
 
         validMoves.addAll(firstMoves);
 
@@ -67,7 +81,7 @@ public class ValidMoves {
                 Map<Ticket, Integer> secondaryTickets = new HashMap<Ticket, Integer>(currentTickets);
                 secondaryTickets.put(firstMove.ticket, secondaryTickets.get(firstMove.ticket) - 1);
 
-                Set<MoveTicket> secondMoves = getAvailableSingleMoves(currentPlayer, firstMove.target, secondaryTickets);
+                Set<MoveTicket> secondMoves = getAvailableSingleMoves(currentPlayer, firstMove.target, secondaryTickets, positions);
 
                 for (MoveTicket secondMove : secondMoves) {
                     validMoves.add(MoveDouble.instance(currentPlayer, firstMove, secondMove));

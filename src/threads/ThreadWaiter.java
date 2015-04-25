@@ -27,6 +27,9 @@ public class ThreadWaiter<T> {
 	}
 
 	public void run(final List<Callable<T>> callables) {
+
+		mThreadState = ThreadState.STARTED;
+
 		for(Callable<T> callable : callables){
 			try {
 				mResults.add(callable.call());
@@ -34,6 +37,8 @@ public class ThreadWaiter<T> {
 				e.printStackTrace();
 			}
 		}
+
+		mThreadState = ThreadState.IDLE;
 	}
 
 	public void thread(final List<Callable<T>> callables){
@@ -81,6 +86,7 @@ public class ThreadWaiter<T> {
 						}
 					}
 
+					System.err.println("Received all "+threadCount+" responses");
 					mThreadState = ThreadState.IDLE;
 				}
 			}).start();
@@ -89,12 +95,18 @@ public class ThreadWaiter<T> {
 
 	}
 
-	public boolean hasNext() {
-		return mResults.size() > 0 || mThreadState == ThreadState.STARTED;
+	public boolean isFinished() {
+		return mResults.size() == 0 && mThreadState == ThreadState.IDLE;
 	}
 
+
 	public T getNext() {
-		return mResults.pop();
+
+		if(mResults.size() > 0) {
+			return mResults.pop();
+		}else{
+			return null;
+		}
 	}
 
 }

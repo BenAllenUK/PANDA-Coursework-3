@@ -143,7 +143,7 @@ public class FutureHelper {
 				@Override
 				public MoveInfoHolder call() throws Exception {
 
-					Set<Move> nextMoves = mValidator.validMoves(nextPos, cacheTicketmap.get(player), player);
+					Set<Move> nextMoves = mValidator.validMoves(nextPos, cacheTicketmap.get(player), player, null);
 
 					// Get the score if this move was made, with the tickets surrounding moves
 					HashMap<ScoreElement, Float> scoreForMove = mScorer.score(nextPos, nextMoves, player, otherPlayerPositionsCurrently);
@@ -370,7 +370,7 @@ public class FutureHelper {
 					}
 				}
 
-				Set<Move> opponentValidMoves = mValidator.validMoves(opponentPosition, opponentTickets, opponentColour);
+				Set<Move> opponentValidMoves = mValidator.validMoves(opponentPosition, opponentTickets, opponentColour, null);
 
 				//get the scores for the opponent's move
 
@@ -435,7 +435,7 @@ public class FutureHelper {
 			//now we have the current player's new position and all of their opponents positions
 			//we can do it again if we want
 
-			Set<Move> validMoves = mValidator.validMoves(endTarget, postMoveTickets.get(currentPlayer), currentPlayer);
+			Set<Move> validMoves = mValidator.validMoves(endTarget, postMoveTickets.get(currentPlayer), currentPlayer, null);
 
 			HashMap<ScoreElement, Float> scoreForMove = mScorer.score(endTarget, validMoves, currentPlayer, postMovePositions);
 			moveInfoList.add(new MoveInfoHolder(move, scoreForMove, validMoves, postMoveTickets, postMovePositions));
