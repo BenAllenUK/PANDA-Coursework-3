@@ -12,6 +12,7 @@ import solution.ScotlandYardMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -60,6 +61,7 @@ public class ScorerHelper {
      * @param currentPlayer the current player
      * @return the element that was tested and its score i.e distance, move availability etc
      */
+	@Deprecated
     public HashMap<ScoreElement, Float> score(int location, Set<Move> moves, Colour currentPlayer, HashMap<Colour, Integer> otherPlayerPositions){
 
         HashMap<ScoreElement, Float> scoreMap = new HashMap<ScoreElement, Float>();
@@ -79,6 +81,7 @@ public class ScorerHelper {
      * @param moves the future moves
      * @return the score
      */
+	@Deprecated
     public float getMovesScore(Set<Move> moves) {
         return moves.size() / Constants.MAX_CONNECTIONS_PER_NODE;
     }
@@ -150,7 +153,30 @@ public class ScorerHelper {
 		return distanceScore;
     }
 
-	public int score(final MiniMaxState nextPlayersBestState) {
-		return 0;
+
+
+	public int score(final MiniMaxState state) {
+
+		float averageDistance = 0;
+
+		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
+
+		final float divider = state.getPositions().size() - 1;
+
+		for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()){
+
+			if(position.getKey() != Constants.MR_X_COLOUR) {
+				final Integer pos = position.getValue();
+				final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
+				if(dataPositions != null) {
+					averageDistance += (dataPositions.size() - 1) / divider;
+				}else{
+					return 0;
+				}
+			}
+
+		}
+
+		return (int) averageDistance;
 	}
 }

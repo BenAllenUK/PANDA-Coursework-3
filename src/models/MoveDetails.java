@@ -48,4 +48,11 @@ public class MoveDetails {
         }
         return this;
     }
+
+	@Override
+	public String toString() {
+		return "MoveDetails{" +
+				"move=" + move +
+				'}';
+	}
 }

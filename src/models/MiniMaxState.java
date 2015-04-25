@@ -2,13 +2,10 @@ package models;
 
 import helpers.Constants;
 import scotlandyard.Colour;
-import scotlandyard.Move;
-import scotlandyard.MoveTicket;
 import scotlandyard.Ticket;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,18 +13,23 @@ import java.util.Map;
  */
 public class MiniMaxState {
 
-
 	private HashMap<Colour,HashMap<Ticket, Integer>> tickets;
 	private HashMap<Colour, Integer> positions;
 	private Colour currentPlayer;
-	private Move lastMove;
+	private HashMap<Colour, MoveDetails> lastMoves;
 	private int currentScore;
 	private int currentDepth;
 
-	// TODO: unsure as to whether it is good to pass through a list of players
-	// TODO: would be better if we could use the viewcontroller in here, but then too much memory taken up #memoryIssues
-	public MiniMaxState applyMove(final MoveDetails moveDetails, final List<Colour> players) {
-		MiniMaxState newState = new MiniMaxState();
+	public MiniMaxState (Colour currentPlayer, HashMap<Colour, Integer> positions, HashMap<Colour,HashMap<Ticket, Integer>> tickets) {
+		this.currentPlayer = currentPlayer;
+		this.positions = positions;
+		this.tickets = tickets;
+		lastMoves = new HashMap<Colour, MoveDetails>();
+	}
+
+	public MiniMaxState copyFromMove(final MoveDetails moveDetails, final Colour nextPlayer) {
+
+		lastMoves.put(currentPlayer, moveDetails);
 
 		final Colour currentPlayer = moveDetails.getMove().colour;
 		HashMap<Colour,HashMap<Ticket, Integer>> futureTickets = updateFutureTicketNumbers(
@@ -39,37 +41,16 @@ public class MiniMaxState {
 		HashMap<Colour, Integer> futurePositions = (HashMap<Colour, Integer>) positions.clone();
 		futurePositions.replace(currentPlayer, moveDetails.getEndTarget());
 
-		// Get the next player
-		Colour nextPlayer = nextPlayer(currentPlayer, players);
+		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets);
 
 		// Setup the new state
-		newState.setCurrentPlayer(nextPlayer);
-
-		// TODO: hmm, so we shouldn't pass in null. How else do we get the next players last ticket used effectively?
-		// TODO: idea is a HashMap<Colour, Ticket> {Player name, the last ticket they used}
-
-		newState.setLastMove(MoveTicket.instance(nextPlayer, null, positions.get(nextPlayer)));
-		newState.setTickets(futureTickets);
-		newState.setPositions(futurePositions);
+		newState.setLastMoveMap(lastMoves);
 		newState.setCurrentDepth(currentDepth + 1);
 
 		return newState;
 	}
 
-	/**
-	 * Acts a rotating stack and gets the next player in the cycle
-	 * @param player the current player
-	 * @param players list of all players
-	 * @return the next player
-	 */
-	private Colour nextPlayer(final Colour player, List<Colour> players) {
-		int position = players.indexOf(player);
-		if(position + 1 == players.size()){
-			return players.get(0);
-		} else {
-			return players.get(position + 1);
-		}
-	}
+
 
 	/**
 	 * Get tickets for a player taking into account whether they used a double move or not
@@ -131,18 +112,18 @@ public class MiniMaxState {
 		}
 		return prefix + "MiniMaxState{ \n" +
 				"currentPlayer=" + currentPlayer +
-				",\n lastMove=" + lastMove +
+				",\n lastMoves=" + lastMoves +
 				",\n currentScore=" + currentScore +
 				",\n currentDepth=" + currentDepth +
 				"}\n";
 	}
 
-	public Move getLastMove() {
-		return lastMove;
+	public MoveDetails getLastMove(Colour player) {
+		return lastMoves.get(player);
 	}
 
-	public void setLastMove(Move lastMove) {
-		this.lastMove = lastMove;
+	public void setLastMoveMap(HashMap<Colour, MoveDetails> lastMoveMap) {
+		this.lastMoves = lastMoveMap;
 	}
 
 	public int getCurrentScore() {
@@ -185,4 +166,6 @@ public class MiniMaxState {
 	public void setCurrentDepth(int currentDepth) {
 		this.currentDepth = currentDepth;
 	}
+
+
 }
