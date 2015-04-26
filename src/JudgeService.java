@@ -56,6 +56,7 @@ public class JudgeService {
 
         JudgedScotlandYard game = new JudgedScotlandYard(5, rounds, "resources/graph.txt");
 
+		int[] xStartPosArray = new int[]{172, 170, 71, 104, 166, 51, 78, 35, 146, 127, 106, 45, 132};
 
         Map<Colour, Integer> locations = new HashMap<Colour, Integer>();
         locations.put(Colour.Red,    56);
@@ -86,7 +87,7 @@ public class JudgeService {
 
         // This sets up a new judge with the given gameId, and that
         // will wait 15000 milliseconds between each move.
-        ScotlandYardJudge judge = new ScotlandYardJudge(gameId, 15000000, messenger,
+        ScotlandYardJudge judge = new ScotlandYardJudge(gameId, 15000, messenger,
                 game, "resources/graph.txt", locations, tickets);
         judge.initialiseGame();
         judge.interpretMessages();

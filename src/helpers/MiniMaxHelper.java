@@ -5,7 +5,6 @@ import models.MoveDetails;
 import scotlandyard.Colour;
 import scotlandyard.Graph;
 import scotlandyard.Move;
-import scotlandyard.MoveTicket;
 import scotlandyard.Route;
 import scotlandyard.ScotlandYardView;
 import threads.ThreadWaiter;
@@ -24,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class MiniMaxHelper {
 	private static final int MAX_DEPTH = 1;
-	private static final int MOVE_SUBSET_SIZE = 15;
+	private static final int MOVE_SUBSET_SIZE = 20;
 	private static final boolean LOG_THREADS = false;
 	private final ScotlandYardView mViewController;
 	private final ScorerHelper mScorer;
@@ -82,14 +81,14 @@ public class MiniMaxHelper {
 					state.getPositions()
 			));
 
-			for(Move move : moves){
-				if(move instanceof MoveTicket){
-					if(((MoveTicket)move).ticket == null){
-						new Exception().printStackTrace();
-						System.exit(1);
-					}
-				}
-			}
+//			for(Move move : moves){
+//				if(move instanceof MoveTicket){
+//					if(((MoveTicket)move).ticket == null){
+//						new Exception().printStackTrace();
+//						System.exit(1);
+//					}
+//				}
+//			}
 
 			final Colour nextPlayer = nextPlayer(state.getCurrentPlayer(), mViewController.getPlayers());
 
@@ -105,12 +104,12 @@ public class MiniMaxHelper {
 				boolean shouldContinue = false;
 
 				//don't take multiple moves that end up in the same place
-				for(MoveDetails move : moveSubList){
-					if(move.getEndTarget() == moveDetails.getEndTarget()){
-						shouldContinue = true;
-						break;
-					}
-				}
+//				for(MoveDetails move : moveSubList){
+//					if(move.getEndTarget() == moveDetails.getEndTarget()){
+//						shouldContinue = true;
+//						break;
+//					}
+//				}
 
 				if(shouldContinue){
 					continue;

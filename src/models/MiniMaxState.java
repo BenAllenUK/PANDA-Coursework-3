@@ -121,6 +121,7 @@ public class MiniMaxState {
 		return "MiniMaxState{" +
 				"currentPlayer=" + currentPlayer +
 				", currentScore=" + currentScore +
+				", positions=" + positions +
 				", lastMove=" + lastMoves.get(currentPlayer) +
 				'}';
 	}

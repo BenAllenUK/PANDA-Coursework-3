@@ -156,31 +156,43 @@ public class ScorerHelper {
 
 	public int score(final MiniMaxState state) {
 
-		float averageDistance = 0;
-		float minimumDistance = Integer.MAX_VALUE;
-
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
-		final float divider = state.getPositions().size() - 1;
+		if(state.getRootPlayerColour() == Constants.MR_X_COLOUR) {
+			float averageDistance = 0;
+			float minimumDistance = Integer.MAX_VALUE;
 
-		for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
-			if (position.getKey() != Constants.MR_X_COLOUR) {
-				final Integer pos = position.getValue();
-				final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
-				if (dataPositions != null) {
-					final float distance = (dataPositions.size() - 1);
-					minimumDistance = Math.min(minimumDistance, distance);
-					averageDistance += distance / divider;
-				}else{
-					minimumDistance = 0;
+			final float divider = state.getPositions().size() - 1;
+
+			for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
+
+				if (position.getKey() != Constants.MR_X_COLOUR) {
+					final Integer pos = position.getValue();
+					final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
+					if (dataPositions != null) {
+						final float distance = (dataPositions.size() - 1);
+						minimumDistance = Math.min(minimumDistance, distance);
+						averageDistance += distance / divider;
+					} else {
+						minimumDistance = 0;
+					}
+				} else {
+
 				}
-			} else {
-
 			}
-		}
 
-		return (int) minimumDistance;
+			return (int) minimumDistance;
+		}else{
+
+			final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, state.getPositions().get(state.getRootPlayerColour()));
+			if (dataPositions != null) {
+				return (dataPositions.size() - 1);
+			} else {
+				return Integer.MAX_VALUE;
+			}
+
+		}
 	}
 
 }
