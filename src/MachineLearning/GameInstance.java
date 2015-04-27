@@ -64,9 +64,6 @@ public class GameInstance {
 
 		@Override
 		public void println(final String x) {
-			if(x.equals("STUPIDLOG")){
-				return;
-			}
 
 			if(x.contains("ROUND:")){
 				final String[] list = x.split(" ");
@@ -181,7 +178,7 @@ public class GameInstance {
 			processFound = false;
 			try {
 				String line;
-				Process p = runtime.exec("ps -e");
+				Process p = runtime.exec("ps aux");
 				BufferedReader input =
 						new BufferedReader(new InputStreamReader(p.getInputStream()));
 				while ((line = input.readLine()) != null) {
@@ -211,7 +208,7 @@ public class GameInstance {
 			}
 			try {
 				String line;
-				Process p = runtime.exec("ps -e");
+				Process p = runtime.exec("ps aux");
 				BufferedReader input =
 						new BufferedReader(new InputStreamReader(p.getInputStream()));
 				while ((line = input.readLine()) != null) {
