@@ -46,7 +46,7 @@ public class MachineLearner {
 					System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);
 
 					final GameResult result = playGame(gene);
-					if (result == null) {
+					if (result == null || result.isError()) {
 						System.err.println("null result returned, will retry");
 					} else {
 						System.out.println("Round ended with score " + result.getRound());

@@ -315,7 +315,7 @@ public class GameInstance {
 			}
 		}
 
-		return new GameResult(logger.mrXWon(), logger.getCurrentRound());
+		return new GameResult(!logger.mrXWon() && !logger.detectivesWon(), logger.getCurrentRound());
 	}
 
 	private void gameEnded() {
