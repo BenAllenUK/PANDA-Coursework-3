@@ -167,23 +167,16 @@ public class MiniMaxHelper {
 							}
 						}
 
-						if(stateList.size() > 1) {
-							int lastScore = stateList.get(0).getCurrentScore();
-							for (int i = 0; i < stateList.size(); i++) {
-								final MiniMaxState s = stateList.get(i);
-								if(s.getCurrentScore() == lastScore) {
-									if (i == stateList.size() - 1) {
-										System.err.println("all scores are equal!! after adding " + nextPlayersBestState);
-										System.out.println("stateList = " + stateList);
-									}else{
-										continue;
-									}
-								}else {
-									break;
-								}
-							}
-						}
+					}
 
+					if(threadWaiter.isFinished()){
+						break;
+					}
+
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
 				}
 
