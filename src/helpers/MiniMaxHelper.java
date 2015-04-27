@@ -49,6 +49,7 @@ public class MiniMaxHelper {
 	public void begin(){
 		scoreCount = 0;
 		finishUp = false;
+//		mThreadPool.shutdownNow();
 		final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 		executor.schedule(new Runnable() {
 			@Override
@@ -65,11 +66,11 @@ public class MiniMaxHelper {
 			//score where we are
 
 			if(!atMaxDepth){
-				System.err.println("Prematurely exiting");
+//				System.err.println("Prematurely exiting");
 			}
-			state.setCurrentScore(mScorer.score(state));
+			state.setCurrentScore(mScorer.score(state, mValidator, mViewController));
 			scoreCount++;
-			System.out.println("score " + scoreCount + " complete");
+//			System.out.println("score " + scoreCount + " complete");
 
 			return state;
 		} else {
@@ -164,23 +165,6 @@ public class MiniMaxHelper {
 						} else {
 							if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
 								bestState = nextPlayersBestState;
-							}
-						}
-
-						if(stateList.size() > 1) {
-							int lastScore = stateList.get(0).getCurrentScore();
-							for (int i = 0; i < stateList.size(); i++) {
-								final MiniMaxState s = stateList.get(i);
-								if(s.getCurrentScore() == lastScore) {
-									if (i == stateList.size() - 1) {
-										System.err.println("all scores are equal!! after adding " + nextPlayersBestState);
-										System.out.println("stateList = " + stateList);
-									}else{
-										continue;
-									}
-								}else {
-									break;
-								}
 							}
 						}
 

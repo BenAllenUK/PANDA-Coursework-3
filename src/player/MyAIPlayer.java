@@ -9,6 +9,7 @@ import models.MoveDetails;
 import scotlandyard.Colour;
 import scotlandyard.Graph;
 import scotlandyard.Move;
+import scotlandyard.MovePass;
 import scotlandyard.Player;
 import scotlandyard.Route;
 import scotlandyard.ScotlandYardGraphReader;
@@ -91,16 +92,28 @@ public class MyAIPlayer implements Player {
 
 		mMiniMaxHelper.begin();
 
+		if(moves.size() == 1){
+			final Move move = moves.iterator().next();
+			if(move instanceof MovePass) {
+				return move;
+			}
+		}
+
 		final MiniMaxState bestState = mMiniMaxHelper.minimax(initialState);
 
 		System.out.println("whole decision took "+(System.currentTimeMillis() - startMillis)+"ms");
 
 		System.out.println("bestState = " + bestState);
 
-		MoveDetails bestMoveDetails = bestState.getLastMove(currentPlayer);
 
-		System.out.println("bestMoveDetails = " + bestMoveDetails);
-		return bestMoveDetails.getMove();
+		if(bestState != null) {
+			MoveDetails bestMoveDetails = bestState.getLastMove(currentPlayer);
+
+			System.out.println("bestMoveDetails = " + bestMoveDetails);
+			return bestMoveDetails.getMove();
+		}else{
+			return moves.iterator().next();
+		}
 	}
 
 }

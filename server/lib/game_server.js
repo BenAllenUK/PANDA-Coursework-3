@@ -33,6 +33,7 @@ GameServer.prototype.parseInput = function(judge, data) {
     // if the judge is joining then we create a new game
     if(message.type == 'INITIALISE') {
         this.initialiseGame(judge, message);
+        console.log("initialised");
     }
     else if(message.type == 'NOTIFY_TURN') {
         var player = this.getPlayerFromJudge(judge, message.colour);
@@ -49,6 +50,7 @@ GameServer.prototype.parseInput = function(judge, data) {
         for(var id in spectators) {
             spectators[id].write(JSON.stringify(message) + '\n')
         }
+
     }
     else if(message.type == 'GAME_OVER') {
         var game = this.games[this.sockets[this.socketId(judge)]];
