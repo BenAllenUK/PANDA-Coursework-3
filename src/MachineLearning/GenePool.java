@@ -14,10 +14,8 @@ import java.util.Random;
  * Created by rory on 27/04/15.
  */
 public class GenePool {
-	private static final int POOL_SIZE = 20;
-	private static final int PARENT_POOL_SIZE = 2;
-	private static final int START_SEED = 0;
-	private static final int START_VARIANCE = 0;
+	private static final int POOL_SIZE = 30;
+	private static final int PARENT_POOL_SIZE = 3;
 	ArrayList<Gene> geneList;
 	int generation;
 
@@ -26,11 +24,8 @@ public class GenePool {
 		generation = 1;
 	}
 
-	public static GenePool newRandomPool() {
-		return newRandomPool(START_SEED, START_VARIANCE);
-	}
 
-	public static GenePool newRandomPool(final int seed, final int variance) {
+	public static GenePool newRandomPool() {
 		GenePool genePool = new GenePool();
 
 		for (int i = 0; i < POOL_SIZE; i++) {
@@ -188,6 +183,7 @@ public class GenePool {
 		mdwSd = Math.sqrt(mdwSd);
 
 		final float randFactor = 2f;
+		final float sdFactor = 2f;
 
 		for (int i = 0; i < POOL_SIZE; i++) {
 
@@ -195,13 +191,13 @@ public class GenePool {
 
 			Random random = new Random();
 
-			newGene.setMEAN_DIST_WEIGHT(mdwMean + (mdwSd * 2 * random.nextDouble() - mdwSd) + (random.nextInt(2)-1)*mdwMean/ randFactor);
-			newGene.setMOVE_WEIGHT(mwMean + (mwSd * 2 * random.nextDouble() - mwSd) + (random.nextInt(2)-1)*mwMean/ randFactor);
-			newGene.setSECRET_MOVE_WEIGHT(smwMean + (smwSd * 2 * random.nextDouble() - smwSd) + (random.nextInt(2)-1)*smwMean/ randFactor);
-			newGene.setVISIBLE_ROUND_WEIGHT(vrwMean + (vrwSd * 2 * random.nextDouble() - vrwSd) + (random.nextInt(2)-1)*vrwMean/ randFactor);
-			newGene.setINVISIBLE_ROUND_WEIGHT(irwMean + (irwSd * 2 * random.nextDouble() - irwSd) + (random.nextInt(2)-1)*irwMean/ randFactor);
-			newGene.setSD_DIST_WEIGHT(sdwMean + (sdwSd * 2 * random.nextDouble() - sdwSd) + (random.nextInt(2)-1)*sdwMean/ randFactor);
-			newGene.setBOAT_WEIGHT(bwMean + (bwSd * 2 * random.nextDouble() - bwSd) + (random.nextInt(2)-1)*bwMean/ randFactor);
+			newGene.setMEAN_DIST_WEIGHT(mdwMean + (mdwSd * 2 * random.nextDouble() - mdwSd)*sdFactor + (random.nextInt(2)-1)*mdwMean/ randFactor);
+			newGene.setMOVE_WEIGHT(mwMean + (mwSd * 2 * random.nextDouble() - mwSd)*sdFactor + (random.nextInt(2)-1)*mwMean/ randFactor);
+			newGene.setSECRET_MOVE_WEIGHT(smwMean + (smwSd * 2 * random.nextDouble() - smwSd)*sdFactor + (random.nextInt(2)-1)*smwMean/ randFactor);
+			newGene.setVISIBLE_ROUND_WEIGHT(vrwMean + (vrwSd * 2 * random.nextDouble() - vrwSd)*sdFactor + (random.nextInt(2)-1)*vrwMean/ randFactor);
+			newGene.setINVISIBLE_ROUND_WEIGHT(irwMean + (irwSd * 2 * random.nextDouble() - irwSd)*sdFactor + (random.nextInt(2)-1)*irwMean/ randFactor);
+			newGene.setSD_DIST_WEIGHT(sdwMean + (sdwSd * 2 * random.nextDouble() - sdwSd)*sdFactor + (random.nextInt(2)-1)*sdwMean/ randFactor);
+			newGene.setBOAT_WEIGHT(bwMean + (bwSd * 2 * random.nextDouble() - bwSd)*sdFactor + (random.nextInt(2)-1)*bwMean/ randFactor);
 
 			geneList.add(newGene);
 		}

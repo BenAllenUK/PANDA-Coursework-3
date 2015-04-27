@@ -8,7 +8,7 @@ import java.util.Random;
  * Created by rory on 27/04/15.
  */
 public class Gene {
-	private static final int RAND_BOUND = 20;
+	private static final int RAND_BOUND = 40;
 	private double MEAN_DIST_WEIGHT;
 	private double MOVE_WEIGHT;
 	private double SECRET_MOVE_WEIGHT;

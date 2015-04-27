@@ -29,6 +29,7 @@ public class MachineLearner {
 			mGenePool = GenePool.load(geneFile);
 		} else {
 			mGenePool = GenePool.newRandomPool();
+			mGenePool.save();
 		}
 	}
 
