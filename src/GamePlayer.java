@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
  */
 public class GamePlayer {
 	private final Runtime runtime;
+	private final CustomPrintStream logger;
 	private boolean judgeReady;
 	private Process serverProcess;
 	private Thread judgeThread;
@@ -53,7 +54,7 @@ public class GamePlayer {
 
 		@Override
 		public void println(final String x) {
-			if(x.contains("GAME_OVER [White, Red, Blue, Yellow, Green]")){
+			if(x.contains("GAME_OVER")){
 				final String[] list = x.substring(8).split(" ");
 
 				System.out.println("game won by "+x.substring(8));
@@ -83,7 +84,8 @@ public class GamePlayer {
 
 	public GamePlayer () throws IOException {
 
-		System.setOut(new CustomPrintStream(System.out));
+		logger = new CustomPrintStream(System.out);
+		System.setOut(logger);
 
 		runtime = Runtime.getRuntime();
 
@@ -94,9 +96,21 @@ public class GamePlayer {
 
 	private void stopGame() {
 		serverProcess.destroy();
+
+		if(logger.mrXWon()){
+			System.out.println("Mr X Won");
+		}else if(logger.detectivesWon()){
+			System.out.println("Detectives won");
+		}else{
+			System.err.println("No one won - error");
+		}
+
+		System.exit(0);
 	}
+
 	private void startGame() throws IOException {
 
+		logger.resetWinner();
 		judgeReady = false;
 		boolean killingProcess = false;
 		String processToKill = null;
@@ -161,8 +175,13 @@ public class GamePlayer {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				JudgeService.main(new String[]{"localhost", "8123", "1"});
-				stopGame();
+				try {
+					JudgeService.main(new String[]{"localhost", "8123", "1"});
+				} catch (Exception e){
+					System.out.println("Judge exited");
+					stopGame();
+				}
+
 			}
 		}).start();
 
@@ -181,6 +200,7 @@ public class GamePlayer {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				System.out.println("Player exited");
 				stopGame();
 			}
 		});

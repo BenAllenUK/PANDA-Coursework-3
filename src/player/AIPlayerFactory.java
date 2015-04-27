@@ -72,7 +72,7 @@ public class AIPlayerFactory implements PlayerFactory {
     @Override
     public List<Spectator> getSpectators(ScotlandYardView view) {
         List<Spectator> specs = new ArrayList<Spectator>();
-        specs.add(gui(view));
+//        specs.add(gui(view));
         return specs;
     }
 

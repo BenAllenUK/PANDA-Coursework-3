@@ -30,30 +30,30 @@ public class JudgeService {
 		int port = Integer.parseInt(args[1]);
 		int gameId = Integer.parseInt(args[2]);
 
-		List<Boolean> rounds = Arrays.asList(
-				false,
-				false, false,
-				true,
-				false, false, false, false,
-				true,
-				false, false, false, false,
-				true,
-				false, false, false, false,
-				true,
-				false, false, false, false, false,
-				true);
-//        List<Boolean> rounds = Arrays.asList(
-//                true,
-//                true, true,
-//                true,
-//                true, true, true, true,
-//                true,
-//                true, true, true, true,
-//                true,
-//                true, true, true, true,
-//                true,
-//                true, true, true, true, true,
-//                true);
+//		List<Boolean> rounds = Arrays.asList(
+//				false,
+//				false, false,
+//				true,
+//				false, false, false, false,
+//				true,
+//				false, false, false, false,
+//				true,
+//				false, false, false, false,
+//				true,
+//				false, false, false, false, false,
+//				true);
+        List<Boolean> rounds = Arrays.asList(
+                true,
+                true, true,
+                true,
+                true, true, true, true,
+                true,
+                true, true, true, true,
+                true,
+                true, true, true, true,
+                true,
+                true, true, true, true, true,
+                true);
 
 		JudgedScotlandYard game = new JudgedScotlandYard(5, rounds, "resources/graph.txt");
 
@@ -66,11 +66,11 @@ public class JudgeService {
 		Map<Colour, Integer> locations = new HashMap<Colour, Integer>();
 
 		locations.put(Colour.Red, dStartPosArray.get(0));
-		locations.put(Colour.Blue, dStartPosArray.get(1));
-		locations.put(Colour.Green, dStartPosArray.get(2));
-		locations.put(Colour.Black, xStartPosArray.get(0));
-		locations.put(Colour.White, dStartPosArray.get(3));
-		locations.put(Colour.Yellow, dStartPosArray.get(4));
+		locations.put(Colour.Blue, 199);
+		locations.put(Colour.Green, 173);
+		locations.put(Colour.Black, 171);
+		locations.put(Colour.White, 174);
+		locations.put(Colour.Yellow, 162);
 
 		Map<Colour, Map<Ticket, Integer>> tickets = new HashMap<Colour, Map<Ticket, Integer>>();
 		tickets.put(Colour.Red, getTickets(false));
@@ -91,7 +91,7 @@ public class JudgeService {
 
 		// This sets up a new judge with the given gameId, and that
 		// will wait 15000 milliseconds between each move.
-		ScotlandYardJudge judge = new ScotlandYardJudge(gameId, 15000, messenger,
+		ScotlandYardJudge judge = new ScotlandYardJudge(gameId, 1500000, messenger,
 				game, "resources/graph.txt", locations, tickets);
 		judge.initialiseGame();
 		judge.interpretMessages();

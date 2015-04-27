@@ -12,6 +12,7 @@
     <property name="gui_main" value="GuiGame" />
     <property name="judge_main" value="AdminClientService"/>
     <property name="players_main" value="PlayerService"/>
+    <property name="learner_main" value="MachineLearner"/>
 
     <path id="tests_classpath">
         <fileset dir="${lib.dir}" includes="**/*.jar" />
@@ -37,6 +38,16 @@
 	<target name="jar" depends="compile">
 		<jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}" />
 	</target>
+
+  <target name="learner" depends="jar">
+    <java fork="true" classname="${learner_main}">
+      <classpath>
+        <pathelement location="${classes.dir}" />
+        <path location="${jar.dir}/${ant.project.name}.jar" />
+        <path refid="tests_classpath" />
+      </classpath>
+    </java>
+  </target>
 
     <target name="gui" depends="jar">
         <java fork="true" classname="${gui_main}">

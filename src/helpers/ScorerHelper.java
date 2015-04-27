@@ -27,6 +27,7 @@ public class ScorerHelper {
 	private static final int VISIBLE_ROUND_WEIGHT = 1;
 	private static final int INVISIBLE_ROUND_WEIGHT = 1;
 	private static final float SD_DIST_WEIGHT = 1;
+	private static final int BOAT_WEIGHT = 1;
 	private final ScotlandYardView viewController;
 	private final ShortestPathHelper mShortestPathHelper;
 	private DataSave mGraphData;
@@ -205,13 +206,13 @@ public class ScorerHelper {
 
 			sd = Math.sqrt(sd);
 
-
-			final int outBoundMoveCount = validMoves.validMoves(
+			final Set<Move> moves = validMoves.validMoves(
 					state.getPositions().get(state.getCurrentPlayer()),
 					state.getTicketsForCurrentPlayer(),
 					state.getCurrentPlayer(),
 					state.getPositions()
-			).size();
+			);
+			final int outBoundMoveCount = moves.size();
 
 			final int roundComponent = getRoundComponent(state, viewController, 0);
 			final int nextRoundComponent = getRoundComponent(state, viewController, 1);
@@ -219,8 +220,11 @@ public class ScorerHelper {
 			final int moveComponent = outBoundMoveCount * MOVE_WEIGHT;
 			final int meanDistComponent = (int) (mean * MEAN_DIST_WEIGHT);
 			final int sdDistComponent = (int) (sd * SD_DIST_WEIGHT);
+			final int boatComponent = getBoatComponent(state.getPositions().get(state.getRootPlayerColour()));
+			//proximity to centre
+			//boat distance
 
-			return meanDistComponent + sdDistComponent + moveComponent + lastMoveTypeComponent + roundComponent + nextRoundComponent;
+			return meanDistComponent + sdDistComponent + moveComponent + lastMoveTypeComponent + roundComponent + nextRoundComponent + boatComponent;
 
 		} else {
 
@@ -236,6 +240,18 @@ public class ScorerHelper {
 
 			return distComponent;
 		}
+	}
+
+	private int getBoatComponent(int location) {
+
+		int closestBoat = Integer.MAX_VALUE;
+
+		closestBoat = Math.min(closestBoat, mShortestPathHelper.shortestPath(location, 194).size());
+		closestBoat = Math.min(closestBoat, mShortestPathHelper.shortestPath(location, 157).size());
+		closestBoat = Math.min(closestBoat, mShortestPathHelper.shortestPath(location, 115).size());
+		closestBoat = Math.min(closestBoat, mShortestPathHelper.shortestPath(location, 108).size());
+
+		return closestBoat * BOAT_WEIGHT;
 	}
 
 	private int getRoundComponent(final MiniMaxState state, final ScotlandYardView viewController, final int offset) {
