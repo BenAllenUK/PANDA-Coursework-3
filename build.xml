@@ -41,6 +41,7 @@
 
   <target name="learner" depends="jar">
     <java fork="true" classname="${learner_main}">
+      <arg line="${args}" />
       <classpath>
         <pathelement location="${classes.dir}" />
         <path location="${jar.dir}/${ant.project.name}.jar" />
