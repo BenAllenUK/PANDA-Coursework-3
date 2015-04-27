@@ -16,7 +16,7 @@ import java.security.Permission;
  * Created by rory on 26/04/15.
  */
 public class GameInstance {
-
+	private final SecurityManager stdSecMan;
 	enum Winner {DETECITIVES, MR_X, NO_ONE}
 
 	private final Runtime runtime;
@@ -139,21 +139,11 @@ public class GameInstance {
 		stdout = System.out;
 		logger = new CustomPrintStream(System.out);
 		System.setOut(logger);
+		stdSecMan = System.getSecurityManager();
 		System.setSecurityManager(new NoExitSecurityManager());
 
 		runtime = Runtime.getRuntime();
 
-	}
-
-	public void destroy(){
-		System.setOut(stdout);
-
-		stopGame();
-
-	}
-
-	private void stopGame() {
-		serverProcess.destroy();
 	}
 
 	public GameResult startGame() throws IOException {
@@ -325,6 +315,9 @@ public class GameInstance {
 		}
 
 		playing = false;
+
+		System.setOut(stdout);
+		System.setSecurityManager(stdSecMan);
 
 		if(logger.mrXWon()){
 			System.out.println("Mr X Won");

@@ -11,6 +11,7 @@ public class MachineLearner {
 	private static final int GENE_TESTS = 6;
 	private GenePool mGenePool;
 	private String newLine = System.getProperty("line.separator");
+	private GameInstance currentGameInstance;
 
 	public MachineLearner(final int poolNumber) {
 
@@ -52,6 +53,7 @@ public class MachineLearner {
 						System.out.println("Round ended with score " + result.getRound());
 						gene.incrementScore(result.getRound());
 						gene.incrementTestCount();
+						mGenePool.save();
 					}
 				}
 
@@ -74,7 +76,7 @@ public class MachineLearner {
 			}
 
 			System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);
-			System.out.println("finished testing generation " + mGenePool.generation);
+			System.out.println("finished testing generation " + mGenePool.getGeneration());
 			System.out.println("bestGene = " + orderedGeneList.get(orderedGeneList.size() - 1));
 			System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);
 
@@ -89,7 +91,10 @@ public class MachineLearner {
 		gene.apply();
 
 		try {
-			return new GameInstance().startGame();
+
+			currentGameInstance = new GameInstance();
+			final GameResult gameResult = currentGameInstance.startGame();
+			return gameResult;
 		} catch (IOException e) {
 			return null;
 		}

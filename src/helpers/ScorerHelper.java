@@ -174,6 +174,8 @@ public class ScorerHelper {
 			float mean = 0;
 			double sd = 0;
 
+			HashMap<Integer, Float> distancesMap = new HashMap<Integer, Float>();
+
 			for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
 				if (position.getKey() != Constants.MR_X_COLOUR) {
@@ -181,6 +183,7 @@ public class ScorerHelper {
 					final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
 					if (dataPositions != null) {
 						final float distance = (dataPositions.size() - 1);
+						distancesMap.put(pos, distance);
 						mean += distance / divider;
 					} else {
 					}
@@ -193,9 +196,9 @@ public class ScorerHelper {
 
 				if (position.getKey() != Constants.MR_X_COLOUR) {
 					final Integer pos = position.getValue();
-					final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
-					if (dataPositions != null) {
-						final float distance = (dataPositions.size() - 1);
+					final Float dataPosition = distancesMap.get(pos);
+					if (dataPosition != null) {
+						final float distance = dataPosition;
 						sd += ((mean-distance)*(mean-distance)) / divider;
 					} else {
 					}

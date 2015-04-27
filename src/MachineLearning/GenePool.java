@@ -16,8 +16,8 @@ import java.util.Random;
 public class GenePool {
 	private static final int POOL_SIZE = 30;
 	private static final int PARENT_POOL_SIZE = 3;
-	ArrayList<Gene> geneList;
-	int generation;
+	private ArrayList<Gene> geneList;
+	private int generation;
 
 	public GenePool() {
 		geneList = new ArrayList<Gene>();
@@ -201,5 +201,9 @@ public class GenePool {
 
 			geneList.add(newGene);
 		}
+	}
+
+	public int getGeneration() {
+		return generation;
 	}
 }
