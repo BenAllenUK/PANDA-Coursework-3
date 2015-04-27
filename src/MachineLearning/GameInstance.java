@@ -73,7 +73,7 @@ public class GameInstance {
 				final String[] list = x.substring(8).split(" ");
 
 				System.out.println("game won by " + x.substring(8));
-				if(list.length > 1){
+				if(list.length > 2){
 					winner = Winner.DETECITIVES;
 				}else{
 					winner = Winner.MR_X;

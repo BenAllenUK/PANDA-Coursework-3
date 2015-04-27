@@ -24,7 +24,24 @@ public class MachineLearner {
 
 	private void loadGene(final int poolNumber) {
 
+		File folder = new File("genePools");
+
 		File geneFile = new File("genePools/genePool"+poolNumber);
+
+		if(poolNumber == -1){
+			int curGeneration = -1;
+			for(File file : folder.listFiles()){
+				final String fileName = file.getName();
+				if(fileName.contains("genePool")){
+					final int generation = Integer.parseInt(fileName.substring("genePool".length(), fileName.length()));
+					if(!geneFile.exists() || curGeneration == -1 || curGeneration < generation){
+						curGeneration = generation;
+						geneFile = file;
+					}
+				}
+			}
+		}
+
 
 		if (geneFile.exists()) {
 			mGenePool = GenePool.load(geneFile);

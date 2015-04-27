@@ -10,7 +10,12 @@ public class Learner {
 
 	public static void main(String[] args) throws IOException {
 
-		new MachineLearner(Integer.parseInt(args[0]));
+		String arg = "-1";
+
+				if(args.length > 0) {
+					arg = args[0];
+				}
+		new MachineLearner(Integer.parseInt(arg));
 
 	}
 
