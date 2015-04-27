@@ -3,6 +3,7 @@ package player;
 import gui.Gui;
 import net.PlayerFactory;
 import scotlandyard.Colour;
+import scotlandyard.Move;
 import scotlandyard.Player;
 import scotlandyard.ScotlandYardView;
 import scotlandyard.Spectator;
@@ -70,9 +71,15 @@ public class AIPlayerFactory implements PlayerFactory {
     }
 
     @Override
-    public List<Spectator> getSpectators(ScotlandYardView view) {
+    public List<Spectator> getSpectators(final ScotlandYardView view) {
         List<Spectator> specs = new ArrayList<Spectator>();
-//        specs.add(gui(view));
+//		specs.add(gui(view));
+        specs.add(new Spectator() {
+			@Override
+			public void notify(final Move move) {
+				System.out.println("ROUND: "+view.getRound());
+			}
+		});
         return specs;
     }
 

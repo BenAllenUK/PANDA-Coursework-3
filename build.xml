@@ -12,7 +12,7 @@
     <property name="gui_main" value="GuiGame" />
     <property name="judge_main" value="AdminClientService"/>
     <property name="players_main" value="PlayerService"/>
-    <property name="learner_main" value="MachineLearner"/>
+    <property name="learner_main" value="Learner"/>
 
     <path id="tests_classpath">
         <fileset dir="${lib.dir}" includes="**/*.jar" />
