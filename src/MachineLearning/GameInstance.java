@@ -64,7 +64,10 @@ public class GameInstance {
 
 		@Override
 		public void println(final String x) {
-			super.println(x);
+			if(x.equals("STUPIDLOG")){
+				return;
+			}
+
 			if(x.contains("ROUND:")){
 				final String[] list = x.split(" ");
 				currentRound = Math.max(currentRound, Integer.parseInt(list[1]));
@@ -72,7 +75,7 @@ public class GameInstance {
 			if(x.contains("GAME_OVER")){
 				final String[] list = x.substring(8).split(" ");
 
-				System.out.println("game won by "+x.substring(8));
+				System.out.println("game won by " + x.substring(8));
 				if(list.length > 1){
 					winner = Winner.DETECITIVES;
 				}else{
@@ -80,6 +83,7 @@ public class GameInstance {
 				}
 				gameEnded();
 			}
+			super.println(x);
 
 		}
 

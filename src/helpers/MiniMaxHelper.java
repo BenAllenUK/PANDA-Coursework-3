@@ -150,7 +150,7 @@ public class MiniMaxHelper {
 				threadWaiter.thread(callables);
 
 				while(!threadWaiter.isFinished()){
-
+					System.out.println("STUPIDLOG");
 					final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
 
 					if (nextPlayersBestState != null) {
@@ -169,8 +169,9 @@ public class MiniMaxHelper {
 						}
 
 					}
-				}
 
+
+				}
 				System.out.println("stateList = " + stateList);
 			}else {
 				//this is the normal path
