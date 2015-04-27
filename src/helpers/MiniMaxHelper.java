@@ -149,8 +149,12 @@ public class MiniMaxHelper {
 				}
 				threadWaiter.thread(callables);
 
+				long num = 0;
 				while(!threadWaiter.isFinished()){
-					System.out.println("STUPIDLOG");
+					if(num % 30 == 0) {
+						System.out.println("STUPIDLOG");
+					}
+
 					final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
 
 					if (nextPlayersBestState != null) {
@@ -170,7 +174,7 @@ public class MiniMaxHelper {
 
 					}
 
-
+					num++;
 				}
 				System.out.println("stateList = " + stateList);
 			}else {
