@@ -73,7 +73,7 @@ public class AIPlayerFactory implements PlayerFactory {
     @Override
     public List<Spectator> getSpectators(ScotlandYardView view) {
         List<Spectator> specs = new ArrayList<Spectator>();
-		if(StaticConstants.SHOW_GUI) {
+		if(StaticConstants.PLAY_GAME_NORMALLY) {
 			specs.add(gui(view));
 		}
         return specs;

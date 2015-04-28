@@ -149,7 +149,7 @@ public class ScorerHelper {
 
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
-		if (state.getRootPlayerColour() == Constants.MR_X_COLOUR) {
+		if (state.getRootPlayerColour() == Constants.MR_X_COLOUR && !StaticConstants.PLAY_GAME_NORMALLY) {
 
 			final float divider = state.getPositions().size() - 1;
 

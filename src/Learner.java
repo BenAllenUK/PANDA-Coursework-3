@@ -13,7 +13,7 @@ public class Learner {
 
 		String arg = "-1";
 
-		StaticConstants.SHOW_GUI = false;
+		StaticConstants.PLAY_GAME_NORMALLY = false;
 
 		if(args.length > 0) {
 			arg = args[0];
