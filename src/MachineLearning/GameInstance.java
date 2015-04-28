@@ -18,6 +18,7 @@ import java.util.Map;
  */
 public class GameInstance {
 	private final ScotlandYardModel game;
+	private boolean running;
 
 	public GameInstance(Gene gene){
 		gene.apply();
@@ -71,7 +72,7 @@ public class GameInstance {
 		game.spectate(new Spectator() {
 			@Override
 			public void notify(final Move move) {
-				System.out.println("Round: "+game.getRound());
+				System.out.println(move.colour+"'s turn, round: "+game.getRound());
 				synchronized (game){
 					game.notifyAll();
 				}
@@ -89,6 +90,25 @@ public class GameInstance {
 			return new GameResult(true, 0);
 		}
 
+		running = true;
+
+		//this prevents issues where we're stuck waiting in some cases
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while(running){
+					synchronized (game){
+						game.notifyAll();
+					}
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}).start();
+
 		while(!game.isGameOver()){
 			synchronized (game){
 				try {
@@ -98,6 +118,8 @@ public class GameInstance {
 				}
 			}
 		}
+
+		running = false;
 
 		if(game.getWinningPlayers().size() > 1){
 			System.out.println("Detectives won");
