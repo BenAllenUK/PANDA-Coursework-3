@@ -1,335 +1,128 @@
 package MachineLearning;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.Permission;
+import player.MyAIPlayer;
+import scotlandyard.Colour;
+import scotlandyard.Move;
+import scotlandyard.Spectator;
+import scotlandyard.Ticket;
+import solution.ScotlandYardModel;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Created by rory on 26/04/15.
+ * Created by rory on 28/04/15.
  */
 public class GameInstance {
-	private final SecurityManager stdSecMan;
-	enum Winner {DETECITIVES, MR_X, NO_ONE}
+	private final ScotlandYardModel game;
 
-	private final Runtime runtime;
-	private final CustomPrintStream logger;
-	private final PrintStream stdout;
-	private boolean judgeReady;
-	private boolean playing;
-	private Process serverProcess;
-	private Thread judgeThread;
-	private Thread playerThread;
+	public GameInstance(Gene gene){
+		gene.apply();
 
-	public class  CustomPrintStream extends PrintStream {
-		private int currentRound;
+		List<Boolean> rounds = Arrays.asList(
+				false,
+				false, false,
+				true,
+				false, false, false, false,
+				true,
+				false, false, false, false,
+				true,
+				false, false, false, false,
+				true,
+				false, false, false, false, false,
+				true);
 
+		List<Integer> xStartPosArray = Arrays.asList(172, 170, 71, 104, 166, 51, 78, 35, 146, 127, 106, 45, 132);
+		List<Integer> dStartPosArray = Arrays.asList(112, 141, 94, 34, 29, 123, 117, 138, 174, 26, 103, 53, 50, 91, 13, 155);
 
-		Winner winner = Winner.NO_ONE;
+		Collections.shuffle(xStartPosArray);
+		Collections.shuffle(dStartPosArray);
 
-		public CustomPrintStream(final OutputStream out) {
-			super(out);
+		Map<Colour, Integer> locations = new HashMap<Colour, Integer>();
+
+		locations.put(Colour.Red, dStartPosArray.get(0));
+		locations.put(Colour.Blue, dStartPosArray.get(1));
+		locations.put(Colour.Green, dStartPosArray.get(2));
+		locations.put(Colour.White, dStartPosArray.get(3));
+		locations.put(Colour.Yellow, dStartPosArray.get(4));
+		locations.put(Colour.Black, xStartPosArray.get(0));
+
+		Map<Colour, Map<Ticket, Integer>> tickets = new HashMap<Colour, Map<Ticket, Integer>>();
+		tickets.put(Colour.Red, getTickets(false));
+		tickets.put(Colour.Blue, getTickets(false));
+		tickets.put(Colour.Green, getTickets(false));
+		tickets.put(Colour.Yellow, getTickets(false));
+		tickets.put(Colour.White, getTickets(false));
+		tickets.put(Colour.Black, getTickets(true));
+
+		final String graphFile = "resources/graph.txt";
+		game = new ScotlandYardModel(5, rounds, graphFile);
+
+		for (HashMap.Entry<Colour, Integer> entry : locations.entrySet()) {
+
+			MyAIPlayer player = new MyAIPlayer(game, graphFile);
+
+			game.join(player, entry.getKey(), entry.getValue(), tickets.get(entry.getKey()));
 		}
 
-		public CustomPrintStream(final OutputStream out, final boolean autoFlush) {
-			super(out, autoFlush);
-		}
-
-		public CustomPrintStream(final OutputStream out, final boolean autoFlush, final String encoding) throws UnsupportedEncodingException {
-			super(out, autoFlush, encoding);
-		}
-
-		public CustomPrintStream(final String fileName) throws FileNotFoundException {
-			super(fileName);
-		}
-
-		public CustomPrintStream(final String fileName, final String csn) throws FileNotFoundException, UnsupportedEncodingException {
-			super(fileName, csn);
-		}
-
-		public CustomPrintStream(final File file) throws FileNotFoundException {
-			super(file);
-		}
-
-		public CustomPrintStream(final File file, final String csn) throws FileNotFoundException, UnsupportedEncodingException {
-			super(file, csn);
-		}
-
-		@Override
-		public void println(final String x) {
-
-			if(x.contains("ROUND:")){
-				final String[] list = x.split(" ");
-				currentRound = Math.max(currentRound, Integer.parseInt(list[1]));
-			}
-			if(x.contains("GAME_OVER")){
-				final String[] list = x.substring(8).split(" ");
-
-				System.out.println("game won by " + x.substring(8));
-				if(list.length > 2){
-					winner = Winner.DETECITIVES;
-				}else{
-					winner = Winner.MR_X;
-				}
-				gameEnded();
-			}
-			super.println(x);
-
-		}
-
-		public void reset(){
-			winner = Winner.NO_ONE;
-			currentRound = 0;
-		}
-
-		public boolean mrXWon(){
-			return winner == Winner.MR_X;
-		}
-
-		public boolean detectivesWon(){
-			return winner == Winner.DETECITIVES;
-		}
-
-		public int getCurrentRound() {
-			return currentRound;
-		}
-
-		//override  print  methods here
-	}
-
-	protected static class ExitException extends SecurityException
-	{
-		public final int status;
-		public ExitException(int status)
-		{
-			super("There is no escape!");
-			this.status = status;
-		}
-	}
-
-	private static class NoExitSecurityManager extends SecurityManager
-	{
-		@Override
-		public void checkPermission(Permission perm)
-		{
-			// allow anything.
-		}
-		@Override
-		public void checkPermission(Permission perm, Object context)
-		{
-			// allow anything.
-		}
-		@Override
-		public void checkExit(int status)
-		{
-			super.checkExit(status);
-			throw new ExitException(status);
-		}
-	}
-
-	public GameInstance() throws IOException {
-
-		stdout = System.out;
-		logger = new CustomPrintStream(System.out);
-		System.setOut(logger);
-		stdSecMan = System.getSecurityManager();
-		System.setSecurityManager(new NoExitSecurityManager());
-
-		runtime = Runtime.getRuntime();
-
-	}
-
-	public GameResult startGame() throws IOException {
-
-		logger.reset();
-		judgeReady = false;
-		playing = true;
-		boolean killingProcess = false;
-		boolean processFound = false;
-		String processToKill = null;
-		while(processFound) {
-
-			if(processToKill != null && !killingProcess){
-				killingProcess = true;
-				runtime.exec("kill "+processToKill);
-			}
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			processFound = false;
-			try {
-				String line;
-				Process p = runtime.exec("ps aux");
-				BufferedReader input =
-						new BufferedReader(new InputStreamReader(p.getInputStream()));
-				while ((line = input.readLine()) != null) {
-
-					if(line.contains("server_service.js")){
-						processToKill = line.split(" ")[0];
-						processFound = true;
-						break;
-					}
-				}
-				input.close();
-			} catch (Exception err) {
-				err.printStackTrace();
-			}
-		}
-
-		processFound = false;
-		serverProcess = runtime.exec("node server/server_service.js");
-
-
-		while(!processFound) {
-
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			try {
-				String line;
-				Process p = runtime.exec("ps aux");
-				BufferedReader input =
-						new BufferedReader(new InputStreamReader(p.getInputStream()));
-				while ((line = input.readLine()) != null) {
-
-					if(line.contains("server_service.js")){
-						processFound = true;
-						break;
-					}
-				}
-				input.close();
-			} catch (Exception err) {
-				err.printStackTrace();
-			}
-		}
-
-		new Thread(new Runnable() {
+		game.spectate(new Spectator() {
 			@Override
-			public void run() {
-				while(!judgeReady) {
-					try {
-						serverProcess.getInputStream().read();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-
-					judgeReady = true;
+			public void notify(final Move move) {
+				System.out.println("Round: "+game.getRound());
+				synchronized (game){
+					game.notifyAll();
 				}
-			}
-		}).start();
-
-		judgeThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-
-				try {
-					Class<?> cls = Class.forName("JudgeService");
-					Method main = cls.getMethod("main", String[].class);
-					String[] params = new String[]{"localhost", "8123", "1"};
-					main.invoke(null, (Object) params);
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (NoSuchMethodException e) {
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-				} catch (Exception e) {
-
-				}
-
-				System.out.println("Judge exited");
-				gameEnded();
-
 			}
 		});
 
-		judgeThread.start();
-
-		playerThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while(!judgeReady){
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-
-				try {
-					Class<?> cls = Class.forName("PlayerService");
-					Method main = cls.getMethod("main", String[].class);
-					String[] params = new String[]{"localhost", "8122", "ab1234", "cd5678", "ef4321", "gh6543", "ab1234", "cd5678"};
-					main.invoke(null, (Object) params);
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (NoSuchMethodException e) {
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-				}
-
-				System.out.println("Player exited");
-				gameEnded();
-			}
-		});
-		playerThread.start();
-
-
-		while(playerThread.isAlive() || judgeThread.isAlive()){
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		restoreSystemDefaults();
-
-		return new GameResult(!logger.mrXWon() && !logger.detectivesWon(), logger.getCurrentRound());
 	}
 
-	private void gameEnded() {
+	public GameResult start(){
 
-		if(!playing){
-			return;
+		if(game.isReady()){
+			game.start();
+		}else{
+			System.err.println("Could not start game");
+			return new GameResult(true, 0);
 		}
 
-		playing = false;
+		while(!game.isGameOver()){
+			synchronized (game){
+				try {
+					game.wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 
-
-		if(logger.mrXWon()){
-			System.out.println("Mr X Won");
-		}else if(logger.detectivesWon()){
+		if(game.getWinningPlayers().size() > 1){
 			System.out.println("Detectives won");
 		}else{
-			System.err.println("No one won - error");
+			System.out.println("Mr X won");
 		}
+
+		return new GameResult(false, game.getRound());
+
 	}
 
-	private void restoreSystemDefaults() {
-		System.setOut(stdout);
-		System.setSecurityManager(stdSecMan);
+	public final static int[] mrXTicketNumbers = {4, 3, 3, 2, 5};
+	public final static int[] detectiveTicketNumbers = {11, 8, 4, 0, 0};
+
+	private static Map<Ticket, Integer> getTickets(boolean mrX) {
+		Map<Ticket, Integer> tickets = new HashMap<Ticket, Integer>();
+		int count = 0;
+		for (Ticket ticket : Ticket.values()) {
+			if (mrX)
+				tickets.put(ticket, mrXTicketNumbers[count]);
+			else
+				tickets.put(ticket, detectiveTicketNumbers[count]);
+
+			count++;
+		}
+		return tickets;
 	}
 }

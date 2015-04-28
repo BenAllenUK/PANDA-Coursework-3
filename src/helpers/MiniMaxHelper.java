@@ -40,10 +40,6 @@ public class MiniMaxHelper {
 		this.mValidator = new ValidMoves(graph);
 
 		mMovePool = Executors.newFixedThreadPool(MOVE_SUBSET_SIZE);
-//		mMovePool = new ThreadPoolExecutor(THREAD_POOL_SIZE,
-//				THREAD_POOL_SIZE, 0L,
-//				TimeUnit.MILLISECONDS,
-//				new LifoBlockingDeque<Runnable>());
 	}
 
 	public void begin(){

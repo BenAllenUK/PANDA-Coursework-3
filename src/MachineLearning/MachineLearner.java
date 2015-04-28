@@ -10,7 +10,7 @@ public class MachineLearner {
 	private static final int GENE_TESTS = 3;
 	private GenePool mGenePool;
 	private String newLine = System.getProperty("line.separator");
-	private GameInstanceV2 currentGameInstance;
+	private GameInstance currentGameInstance;
 
 	public MachineLearner(final int poolNumber) {
 
@@ -105,7 +105,7 @@ public class MachineLearner {
 
 	private GameResult playGame(final Gene gene) {
 
-		currentGameInstance = new GameInstanceV2(gene);
+		currentGameInstance = new GameInstance(gene);
 		final GameResult gameResult = currentGameInstance.start();
 		return gameResult;
 	}
