@@ -305,6 +305,8 @@ public class GameInstance {
 			}
 		}
 
+		restoreSystemDefaults();
+
 		return new GameResult(!logger.mrXWon() && !logger.detectivesWon(), logger.getCurrentRound());
 	}
 
@@ -316,8 +318,6 @@ public class GameInstance {
 
 		playing = false;
 
-		System.setOut(stdout);
-		System.setSecurityManager(stdSecMan);
 
 		if(logger.mrXWon()){
 			System.out.println("Mr X Won");
@@ -326,5 +326,10 @@ public class GameInstance {
 		}else{
 			System.err.println("No one won - error");
 		}
+	}
+
+	private void restoreSystemDefaults() {
+		System.setOut(stdout);
+		System.setSecurityManager(stdSecMan);
 	}
 }
