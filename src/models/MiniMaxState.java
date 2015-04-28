@@ -127,14 +127,13 @@ public class MiniMaxState {
 	}
 
 	public String indentedString() {
-		String prefix = "";
-		for (int i =0; i < currentDepth; i++){
-			prefix += "	";
-		}
-		return prefix + "MiniMaxState{ \n" +
+		return "MiniMaxState{" +
 				"currentPlayer=" + currentPlayer +
-				",\n currentScore=" + currentScore +
-				"}\n";
+				", currentScore=" + currentScore +
+				", currentDepth=" + currentDepth +
+				", positions=" + positions +
+				", lastMove=" + lastMoves.get(currentPlayer) +
+				'}';
 	}
 
 	public MoveDetails getLastMove(Colour player) {
