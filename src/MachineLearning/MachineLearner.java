@@ -8,7 +8,7 @@ import java.util.ArrayList;
  * Created by rory on 27/04/15.
  */
 public class MachineLearner {
-	private static final int GENE_TESTS = 6;
+	private static final int GENE_TESTS = 3;
 	private GenePool mGenePool;
 	private String newLine = System.getProperty("line.separator");
 	private GameInstance currentGameInstance;

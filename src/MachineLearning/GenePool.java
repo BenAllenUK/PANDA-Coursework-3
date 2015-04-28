@@ -14,8 +14,8 @@ import java.util.Random;
  * Created by rory on 27/04/15.
  */
 public class GenePool {
-	private static final int POOL_SIZE = 30;
-	private static final int PARENT_POOL_SIZE = 3;
+	private static final int POOL_SIZE = 10;
+	private static final int PARENT_POOL_SIZE = 2;
 	private ArrayList<Gene> geneList;
 	private int generation;
 
