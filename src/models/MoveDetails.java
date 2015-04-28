@@ -13,10 +13,21 @@ public class MoveDetails {
     private Ticket ticket1;
     private Ticket ticket2;
     private int endTarget;
+    private final boolean isDouble;
 
     public MoveDetails(Move move) {
         this.move = move;
-        invoke();
+
+        isDouble = move instanceof MoveDouble;
+        if(isDouble){
+            ticket1 = ((MoveDouble)move).move1.ticket;
+            ticket2 = ((MoveDouble)move).move2.ticket;
+            endTarget = ((MoveDouble)move).move2.target;
+        } else {
+            ticket1 = ((MoveTicket)move).ticket;
+            ticket2 = null;
+            endTarget = ((MoveTicket)move).target;
+        }
     }
 
     public Ticket getTicket1() {
@@ -31,23 +42,13 @@ public class MoveDetails {
         return endTarget;
     }
 
+    public boolean isDouble() {
+        return isDouble;
+    }
+
 	public Move getMove() {
 		return move;
 	}
-
-	private MoveDetails invoke() {
-        final boolean isDouble = move instanceof MoveDouble;
-        if(isDouble){
-            ticket1 = ((MoveDouble)move).move1.ticket;
-            ticket2 = ((MoveDouble)move).move2.ticket;
-            endTarget = ((MoveDouble)move).move2.target;
-        } else {
-            ticket1 = ((MoveTicket)move).ticket;
-            ticket2 = null;
-            endTarget = ((MoveTicket)move).target;
-        }
-        return this;
-    }
 
 	public MoveDetails clone(){
 		MoveDetails clone = new MoveDetails(move);
