@@ -108,7 +108,6 @@ public class ThreadWaiter<T> {
 			if (mResults.size() > 0) {
 				return mResults.pop();
 			} else if (mResults.size() == 0 && mThreadState == ThreadState.STARTED) {
-				System.out.println("waiting");
 				try {
 					mResults.wait();
 				} catch (InterruptedException e) {

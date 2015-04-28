@@ -1,5 +1,6 @@
 package player;
 
+import MachineLearning.StaticConstants;
 import gui.Gui;
 import net.PlayerFactory;
 import scotlandyard.Colour;
@@ -33,7 +34,7 @@ public class AIPlayerFactory implements PlayerFactory {
     public AIPlayerFactory() {
         typeMap = new HashMap<Colour, PlayerType>();
         typeMap.put(Colour.Black, AIPlayerFactory.PlayerType.AI);
-        typeMap.put(Colour.Blue, AIPlayerFactory.PlayerType.AI);
+        typeMap.put(Colour.Blue, AIPlayerFactory.PlayerType.GUI);
         typeMap.put(Colour.Green, AIPlayerFactory.PlayerType.AI);
         typeMap.put(Colour.Red, AIPlayerFactory.PlayerType.AI);
         typeMap.put(Colour.White, AIPlayerFactory.PlayerType.AI);
@@ -72,7 +73,9 @@ public class AIPlayerFactory implements PlayerFactory {
     @Override
     public List<Spectator> getSpectators(ScotlandYardView view) {
         List<Spectator> specs = new ArrayList<Spectator>();
-        specs.add(gui(view));
+		if(StaticConstants.SHOW_GUI) {
+			specs.add(gui(view));
+		}
         return specs;
     }
 

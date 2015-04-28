@@ -29,12 +29,9 @@ public class MiniMaxHelper {
 	private final ScorerHelper mScorer;
 	private final ValidMoves mValidator;
 	private final ExecutorService mMovePool;
-	private final ExecutorService mScorerPool;
 	private int threadCount;
 	private int scoreCount;
 	private boolean finishUp;
-
-	private MiniMaxState debugBestState;
 
 	public MiniMaxHelper(ScotlandYardView mViewController, ScorerHelper mScorer, Graph<Integer, Route> graph) {
 
@@ -43,23 +40,20 @@ public class MiniMaxHelper {
 		this.mValidator = new ValidMoves(graph);
 
 		mMovePool = Executors.newFixedThreadPool(MOVE_SUBSET_SIZE);
-
-		mScorerPool = Executors.newCachedThreadPool();
-
 	}
 
 	public void begin(){
 		scoreCount = 0;
 		finishUp = false;
+//		mMovePool.shutdownNow();
 		final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				System.err.println("10 seconds is up, stop what you're doing!");
+//				System.err.println("10 seconds is up, stop what you're doing!");
 				finishUp = true;
 			}
 		}, 10, TimeUnit.SECONDS);
-		debugBestState = null;
 	}
 	public MiniMaxState minimax(final MiniMaxState state) {
 		boolean atMaxDepth = state.getCurrentDepth() == state.getPositions().size() * MAX_DEPTH;
@@ -68,15 +62,11 @@ public class MiniMaxHelper {
 			//score where we are
 
 			if(!atMaxDepth){
-				System.err.println("Prematurely exiting");
+//				System.err.println("Prematurely exiting");
 			}
-			state.setCurrentScore(mScorer.score(state));
+			state.setCurrentScore(mScorer.score(state, mValidator, mViewController));
 			scoreCount++;
-			System.out.println("score " + scoreCount + " complete");
-
-			if(debugBestState == null || debugBestState.getCurrentScore() < state.getCurrentScore()){
-				debugBestState = state;
-			}
+//			System.out.println("score " + scoreCount + " complete");
 
 			return state;
 		} else {
@@ -127,7 +117,7 @@ public class MiniMaxHelper {
 
 			MiniMaxState bestState = null;
 
-			if(state.getCurrentDepth() == 1){
+			if(state.getCurrentDepth() < 1){
 				//this route is taken on the first two depths and uses threads
 
 				ThreadWaiter<MiniMaxState> threadWaiter = new ThreadWaiter<MiniMaxState>(mMovePool);
@@ -157,7 +147,7 @@ public class MiniMaxHelper {
 
 				while(!threadWaiter.isFinished()){
 
-					System.out.println("Spinning start");
+
 
 					final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
 
@@ -182,57 +172,122 @@ public class MiniMaxHelper {
 						break;
 					}
 
-					System.out.println("Spinning end");
 				}
-
 				System.out.println("stateList = " + stateList);
-
 			}else {
 				//this is the normal path
 
-					for (final MoveDetails moveDetails : moveSubList) {
+				boolean nextMaxDepth = (state.getCurrentDepth()+1) == state.getPositions().size() * MAX_DEPTH;
 
-						MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
+//				if(nextMaxDepth){
+//					bestState = processParallelScores(state, moveSubList, nextPlayer);
+//				}else {
 
-						final MiniMaxState nextPlayersBestState = minimax(newState);
+				for (final MoveDetails moveDetails : moveSubList) {
 
-						nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
-						nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
+					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
 
-						if (nextPlayersBestState != null) {
+					final MiniMaxState nextPlayersBestState = minimax(newState);
 
-							if (bestState == null) {
+					nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
+					nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
+
+					if (nextPlayersBestState != null) {
+
+						if (bestState == null) {
+							bestState = nextPlayersBestState;
+						} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
+							if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
 								bestState = nextPlayersBestState;
-							} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
-								if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
-									bestState = nextPlayersBestState;
-									state.alpha = Math.max(bestState.getCurrentScore(), state.alpha);
-								}
-							} else {
-								if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
-									bestState = nextPlayersBestState;
-									state.beta = Math.min(bestState.getCurrentScore(), state.beta);
-								}
+								state.alpha = Math.max(bestState.getCurrentScore(), state.alpha);
 							}
-
-							if (state.beta <= state.alpha) {
-								break;
+						} else {
+							if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
+								bestState = nextPlayersBestState;
+								state.beta = Math.min(bestState.getCurrentScore(), state.beta);
 							}
 						}
+
+						if (state.beta <= state.alpha) {
+							break;
+						}
 					}
+				}
+//				}
 			}
 
 			return bestState;
 		}
 	}
 
+	private MiniMaxState processParallelScores(final MiniMaxState state, final List<MoveDetails> moveSubList, final Colour nextPlayer) {
+
+		ThreadWaiter<MiniMaxState> threadWaiter = new ThreadWaiter<MiniMaxState>(mMovePool);
+
+		List<MiniMaxState> stateList = new ArrayList<MiniMaxState>();
+
+		List<Callable<MiniMaxState>> callables = new ArrayList<>();
+
+		for (final MoveDetails moveDetails : moveSubList) {
+
+			callables.add(new Callable<MiniMaxState>() {
+				@Override
+				public MiniMaxState call() throws Exception {
+
+					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
+
+					final MiniMaxState nextPlayersBestState = minimax(newState);
+
+					nextPlayersBestState.setCurrentScore(mScorer.score(nextPlayersBestState, mValidator, mViewController));
+
+					nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
+					nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
+					return nextPlayersBestState;
+				}
+			});
+
+		}
+		threadWaiter.thread(callables);
+
+		MiniMaxState bestState = null;
+		while(!threadWaiter.isFinished()){
+
+
+
+			final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
+
+			if (nextPlayersBestState != null) {
+
+				stateList.add(nextPlayersBestState);
+				if (bestState == null) {
+					bestState = nextPlayersBestState;
+				} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
+					if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
+						bestState = nextPlayersBestState;
+					}
+				} else {
+					if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
+						bestState = nextPlayersBestState;
+					}
+				}
+
+			}
+
+			if(threadWaiter.isFinished()){
+				break;
+			}
+
+		}
+
+		return bestState;
+	}
 
 	/**
-		 * Acts a rotating stack and gets the next player in the cycle
-		 * @param player the current player
-		 * @param players list of all players
-		 * @return the next player
-		 */
+	 * Acts a rotating stack and gets the next player in the cycle
+	 * @param player the current player
+	 * @param players list of all players
+	 * @return the next player
+	 */
 
 	private static Colour nextPlayer(final Colour player, List<Colour> players) {
 		int position = players.indexOf(player);
