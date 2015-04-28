@@ -33,9 +33,9 @@ public class AIPlayerFactory implements PlayerFactory {
     public AIPlayerFactory() {
         typeMap = new HashMap<Colour, PlayerType>();
         typeMap.put(Colour.Black, AIPlayerFactory.PlayerType.AI);
-        typeMap.put(Colour.Blue, AIPlayerFactory.PlayerType.AI);
+        typeMap.put(Colour.Blue, AIPlayerFactory.PlayerType.GUI);
         typeMap.put(Colour.Green, AIPlayerFactory.PlayerType.AI);
-        typeMap.put(Colour.Red, AIPlayerFactory.PlayerType.AI);
+        typeMap.put(Colour.Red, AIPlayerFactory.PlayerType.GUI);
         typeMap.put(Colour.White, AIPlayerFactory.PlayerType.AI);
         typeMap.put(Colour.Yellow, AIPlayerFactory.PlayerType.AI);
 

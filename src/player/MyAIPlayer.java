@@ -17,10 +17,7 @@ import scotlandyard.Ticket;
 import solution.ScotlandYardMap;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The MyAIPlayer class is a AI that uses scores to determine the next move. Since the
@@ -33,6 +30,7 @@ public class MyAIPlayer implements Player {
 	private final ScotlandYardView mViewController;
 	private final ScotlandYardMap mGameMap;
 	private final ScorerHelper mScorer;
+	private final List<Ticket> mrXMovesPlayed;
 	private final FutureHelper mFuture;
 	private Graph<Integer, Route> mGraph;
 
@@ -52,6 +50,7 @@ public class MyAIPlayer implements Player {
 		mGameMap = new ScotlandYardMap(mGraph);
 		mScorer = new ScorerHelper(mViewController, mGameMap);
 		mFuture = new FutureHelper(mViewController, mGameMap, mScorer, mGraph);
+		mrXMovesPlayed = new LinkedList<>();
 	}
 
 	@Override
@@ -80,12 +79,12 @@ public class MyAIPlayer implements Player {
 			if(currentPlayer == Constants.MR_X_COLOUR){
 				playerPositions.put(Constants.MR_X_COLOUR, location);
 			}else {
-				return new ArrayList<Move>(moves).get(new Random().nextInt(moves.size()-1));
+				return new ArrayList<>(moves).get(new Random().nextInt(moves.size()-1));
 			}
 		}
 
 		final long startMillis = System.currentTimeMillis();
-		MiniMaxState initialState = new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer);
+		MiniMaxState initialState = new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer, mViewController.getRounds(), mViewController.getRound(), new LinkedList<>(mrXMovesPlayed));
 
 		final MiniMaxHelper mMiniMaxHelper = new MiniMaxHelper(mViewController, mScorer, mGraph);
 
@@ -100,6 +99,17 @@ public class MyAIPlayer implements Player {
 		MoveDetails bestMoveDetails = bestState.getLastMove(currentPlayer);
 
 		System.out.println("bestMoveDetails = " + bestMoveDetails);
+
+		if(currentPlayer == Constants.MR_X_COLOUR){
+			if(bestMoveDetails.isDouble()){
+				mrXMovesPlayed.add(bestMoveDetails.getTicket1());
+				mrXMovesPlayed.add(bestMoveDetails.getTicket2());
+			} else {
+				mrXMovesPlayed.add(bestMoveDetails.getTicket1());
+			}
+		}
+		System.out.println("mrXMovesPlayed = " + mrXMovesPlayed);
+		System.out.println("mViewController.getRound = " + mViewController.getRound());
 		return bestMoveDetails.getMove();
 	}
 

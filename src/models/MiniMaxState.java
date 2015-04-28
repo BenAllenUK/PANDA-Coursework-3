@@ -6,6 +6,7 @@ import scotlandyard.Ticket;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,27 +14,36 @@ import java.util.Map;
  */
 public class MiniMaxState {
 	private final Colour rootPlayer;
+	private final List<Boolean> rounds;
+	private final Integer roundNumber;
 	private HashMap<Colour,HashMap<Ticket, Integer>> tickets;
 	private HashMap<Colour, Integer> positions;
 	private Colour currentPlayer;
 	private HashMap<Colour, MoveDetails> lastMoves;
+	private List<Ticket> mrXTicketsUsed;
 	private int currentScore;
-	private int currentDepth;
 
+	private int currentDepth;
 	public int alpha = Integer.MIN_VALUE;
 	public int beta = Integer.MAX_VALUE;
 
-	public MiniMaxState (Colour currentPlayer, HashMap<Colour, Integer> positions, HashMap<Colour,HashMap<Ticket, Integer>> tickets, Colour rootPlayer) {
+	public MiniMaxState (Colour currentPlayer, HashMap<Colour, Integer> positions, HashMap<Colour,HashMap<Ticket, Integer>> tickets, Colour rootPlayer, List<Boolean> rounds, Integer roundNumber, List<Ticket> mrXTicketsUsed) {
 		this.currentPlayer = currentPlayer;
 		this.positions = positions;
 		this.tickets = tickets;
 		this.rootPlayer = rootPlayer;
 		lastMoves = new HashMap<Colour, MoveDetails>();
+		this.rounds = rounds;
+		this.roundNumber = roundNumber;
+		this.mrXTicketsUsed = mrXTicketsUsed;
 	}
 
 	public MiniMaxState copyFromMove(final MoveDetails moveDetails, final Colour nextPlayer) {
 
 		lastMoves.put(currentPlayer, moveDetails);
+
+		// If it is Mr X then add his ticket to the list of played tickets
+		updateMrXTicketsUsed(moveDetails);
 
 		final Colour currentPlayer = moveDetails.getMove().colour;
 		HashMap<Colour,HashMap<Ticket, Integer>> futureTickets = updateFutureTicketNumbers(
@@ -45,7 +55,12 @@ public class MiniMaxState {
 		HashMap<Colour, Integer> futurePositions = (HashMap<Colour, Integer>) positions.clone();
 		futurePositions.replace(currentPlayer, moveDetails.getEndTarget());
 
-		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer);
+		// Add to round number only if the round is about to finish
+		int newRoundNumber = roundNumber;
+		if(nextPlayer == Constants.MR_X_COLOUR){
+			newRoundNumber++;
+		}
+		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer, rounds, newRoundNumber, mrXTicketsUsed);
 
 		final HashMap<Colour, MoveDetails> lastMovesClone = new HashMap<Colour, MoveDetails>();
 
@@ -62,6 +77,15 @@ public class MiniMaxState {
 		return newState;
 	}
 
+	private void updateMrXTicketsUsed(MoveDetails moveDetails) {
+		if(Constants.MR_X_COLOUR == currentPlayer) {
+			if (moveDetails.isDouble()) {
+				mrXTicketsUsed.add(Ticket.Double);
+			} else {
+				mrXTicketsUsed.add(moveDetails.getTicket1());
+			}
+		}
+	}
 
 
 	/**
@@ -191,5 +215,16 @@ public class MiniMaxState {
 
 	public void setLastMove(final Colour player, final MoveDetails moveDetails) {
 		lastMoves.put(player, moveDetails);
+	}
+	public List<Boolean> getRounds() {
+		return rounds;
+	}
+
+	public Integer getRoundNumber() {
+		return roundNumber;
+	}
+
+	public List<Ticket> getMrXTicketsUsed() {
+		return mrXTicketsUsed;
 	}
 }

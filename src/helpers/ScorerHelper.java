@@ -4,16 +4,12 @@ import models.DataPosition;
 import models.DataSave;
 import models.MiniMaxState;
 import models.ScoreElement;
-import scotlandyard.Colour;
-import scotlandyard.Move;
-import scotlandyard.ScotlandYardView;
+import scotlandyard.*;
 import solution.ScotlandYardMap;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by benallen on 10/04/15.
@@ -22,12 +18,12 @@ public class ScorerHelper {
 	private final ScotlandYardView viewController;
 	private final ShortestPathHelper mShortestPathHelper;
 	private DataSave mGraphData;
-	private ScotlandYardMap gameMap;
+	private ScotlandYardMap mGameMap;
 	private final DataParser mDataParser;
 
 	public ScorerHelper(ScotlandYardView vc, ScotlandYardMap gm) {
 		viewController = vc;
-		gameMap = gm;
+		mGameMap = gm;
 		mDataParser = new DataParser();
 
 		try {
@@ -141,45 +137,107 @@ public class ScorerHelper {
 	}
 
 	public int score(final MiniMaxState state) {
-
+		boolean isMrXPerspective = state.getRootPlayerColour() == Constants.MR_X_COLOUR;
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
+		System.out.println("isMrXPerspective = " + isMrXPerspective);
+		if(isMrXPerspective){
+			return (int) scoreForMrX(state, mrXPos);
+		}  else {
+			return scoreForDetectives(state, mrXPos);
+		}
 
-		if(state.getRootPlayerColour() == Constants.MR_X_COLOUR) {
-			float averageDistance = 0;
-			float minimumDistance = Integer.MAX_VALUE;
+	}
 
+	private int scoreForDetectives(MiniMaxState state, int mrXPos) {
 
-			final float divider = state.getPositions().size() - 1;
+		List<Boolean> rounds = state.getRounds();
+		Integer roundNumber = state.getRoundNumber();
+		List<Ticket> mrXTicketsUsed = state.getMrXTicketsUsed();
 
-			for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
-
-				if (position.getKey() != Constants.MR_X_COLOUR) {
-					final Integer pos = position.getValue();
-					final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
-					if (dataPositions != null) {
-						final float distance = (dataPositions.size() - 1);
-						minimumDistance = Math.min(minimumDistance, distance);
-						averageDistance += distance / divider;
-					} else {
-						minimumDistance = 0;
+		boolean isMrXHidden = isMrXHidden(rounds, roundNumber);
+		boolean isMrX = state.getCurrentPlayer() == Constants.MR_X_COLOUR;
+		System.out.println("isMrXHidden = " + isMrXHidden);
+		System.out.println("isDetective = " + !isMrX);
+		if(isMrXHidden){
+			List<Ticket> ticketsPlayed = getTicketsPlayedMrX(rounds, roundNumber, mrXTicketsUsed);
+			System.out.println("ticketsPlayed = " + ticketsPlayed);
+			Set<Edge<Integer, Route>> routesFromLastKnown = mGameMap.getRoutesFrom(state.getPositions().get(Constants.MR_X_COLOUR));
+			Set<Integer> possibleDestinations = new HashSet<>();
+			for (Edge<Integer, Route> routeEdge : routesFromLastKnown) {
+				Ticket firstTicket = mrXTicketsUsed.get(mrXTicketsUsed.size() - 1);
+				if(firstTicket == Ticket.fromRoute(routeEdge.data())){
+					possibleDestinations.add(routeEdge.target());
+				}
+			}
+			int bestValue = Integer.MAX_VALUE;
+			for (Integer possibleDestination : possibleDestinations) {
+				final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, state.getPositions().get(state.getCurrentPlayer()));
+				if (dataPositions != null) {
+					int tempValue = (dataPositions.size() - 1);
+					if(tempValue < bestValue){
+						bestValue = tempValue;
 					}
 				} else {
-
+					return Integer.MIN_VALUE;
 				}
 			}
 
-			return (int) minimumDistance;
-		}else{
 
-			final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, state.getPositions().get(state.getRootPlayerColour()));
+
+
+		} else {
+			final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, state.getPositions().get(state.getCurrentPlayer()));
 			if (dataPositions != null) {
 				return (dataPositions.size() - 1);
 			} else {
 				return Integer.MAX_VALUE;
 			}
-
 		}
+
+	}
+
+	private List<Ticket> getTicketsPlayedMrX(List<Boolean> rounds, Integer roundNumber, List<Ticket> ticketsPlayed) {
+		int backwardsCounter = roundNumber;
+		List<Ticket> ticketsUsedSinceVisible = new LinkedList<>();
+		while(!rounds.get(backwardsCounter)){
+			Ticket ticket = ticketsPlayed.get(backwardsCounter);
+			ticketsUsedSinceVisible.add(ticket);
+			backwardsCounter--;
+		}
+
+		return ticketsUsedSinceVisible;
+	}
+
+	private float scoreForMrX(MiniMaxState state, int mrXPos) {
+		float averageDistance = 0;
+		float minimumDistance = Integer.MAX_VALUE;
+
+
+		final float divider = state.getPositions().size() - 1;
+
+		for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
+
+            if (position.getKey() != Constants.MR_X_COLOUR) {
+                final Integer pos = position.getValue();
+                final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
+                if (dataPositions != null) {
+                    final float distance = (dataPositions.size() - 1);
+                    minimumDistance = Math.min(minimumDistance, distance);
+                    averageDistance += distance / divider;
+                } else {
+                    minimumDistance = 0;
+                }
+            }
+        }
+		return minimumDistance;
 	}
 
 
+	public boolean isMrXHidden(List<Boolean> rounds, Integer thisRoundNumber) {
+		if(rounds.get(thisRoundNumber)){
+			return false;
+		} else {
+			return true;
+		}
+	}
 }
