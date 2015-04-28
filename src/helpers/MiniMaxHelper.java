@@ -29,7 +29,6 @@ public class MiniMaxHelper {
 	private final ScorerHelper mScorer;
 	private final ValidMoves mValidator;
 	private final ExecutorService mMovePool;
-	private final ExecutorService mScorerPool;
 	private int threadCount;
 	private int scoreCount;
 	private boolean finishUp;
@@ -41,7 +40,6 @@ public class MiniMaxHelper {
 		this.mValidator = new ValidMoves(graph);
 
 		mMovePool = Executors.newFixedThreadPool(MOVE_SUBSET_SIZE);
-		mScorerPool = Executors.newCachedThreadPool();
 //		mMovePool = new ThreadPoolExecutor(THREAD_POOL_SIZE,
 //				THREAD_POOL_SIZE, 0L,
 //				TimeUnit.MILLISECONDS,

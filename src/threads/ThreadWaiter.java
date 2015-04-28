@@ -13,16 +13,13 @@ import java.util.concurrent.Future;
  * Created by rory on 25/04/15.
  */
 public class ThreadWaiter<T> {
-
-
-	enum ThreadState {IDLE,STARTED}
-
+	private Thread completionThread;
+	enum ThreadState {IDLE, STARTED}
 	private final ExecutorService mThreadPool;
 	private ThreadState mThreadState = ThreadState.IDLE;
 	private Deque<T> mResults = new ArrayDeque<T>();
 
-
-	public ThreadWaiter (ExecutorService threadPool) {
+	public ThreadWaiter(ExecutorService threadPool) {
 		mThreadPool = threadPool;
 	}
 
@@ -30,7 +27,7 @@ public class ThreadWaiter<T> {
 
 		mThreadState = ThreadState.STARTED;
 
-		for(Callable<T> callable : callables){
+		for (Callable<T> callable : callables) {
 			try {
 				mResults.add(callable.call());
 			} catch (Exception e) {
@@ -41,14 +38,14 @@ public class ThreadWaiter<T> {
 		mThreadState = ThreadState.IDLE;
 	}
 
-	public void thread(final List<Callable<T>> callables){
+	public void thread(final List<Callable<T>> callables) {
 
-		if(mThreadState == ThreadState.STARTED){
+		if (mThreadState == ThreadState.STARTED) {
 			System.err.println("Thread already started");
 			return;
-		}else {
+		} else {
 			mThreadState = ThreadState.STARTED;
-			new Thread(new Runnable() {
+			completionThread = new Thread(new Runnable() {
 				@Override
 				public void run() {
 
@@ -73,7 +70,15 @@ public class ThreadWaiter<T> {
 							resultFuture = completionService.take();
 							final T result = resultFuture.get();
 
-							mResults.add(result);
+							if(received == threadCount){
+								System.err.println("Received all " + threadCount + " responses");
+								mThreadState = ThreadState.IDLE;
+							}
+
+							synchronized (mResults) {
+								mResults.add(result);
+								mResults.notifyAll();
+							}
 
 //				if(LOG_THREADS) System.out.println("took " + (System.currentTimeMillis() - startMillis) + "ms to execute thread at level " + state.getCurrentDepth());
 
@@ -86,27 +91,36 @@ public class ThreadWaiter<T> {
 						}
 					}
 
-					System.err.println("Received all "+threadCount+" responses");
-					mThreadState = ThreadState.IDLE;
+
 				}
-			}).start();
+			});
+			completionThread.start();
 		}
-
-
 	}
 
 	public boolean isFinished() {
 		return mResults.size() == 0 && mThreadState == ThreadState.IDLE;
 	}
 
-
 	public T getNext() {
 
-		if(mResults.size() > 0) {
-			return mResults.pop();
-		}else{
-			return null;
+		synchronized (mResults) {
+			if (mResults.size() > 0) {
+				return mResults.pop();
+			} else if (mResults.size() == 0 && mThreadState == ThreadState.STARTED) {
+				System.out.println("waiting");
+				try {
+					mResults.wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				if (mResults.size() > 0) {
+					return mResults.pop();
+				} else {
+					return null;
+				}
+			}
 		}
+		return null;
 	}
-
 }
