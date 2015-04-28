@@ -89,7 +89,7 @@ public class MachineLearner {
 					}
 				}
 
-				mGenePool.save();
+
 			}
 
 			System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);

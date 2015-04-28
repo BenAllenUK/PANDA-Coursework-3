@@ -54,7 +54,7 @@ public class MiniMaxHelper {
 		executor.schedule(new Runnable() {
 			@Override
 			public void run() {
-				System.err.println("10 seconds is up, stop what you're doing!");
+//				System.err.println("10 seconds is up, stop what you're doing!");
 				finishUp = true;
 			}
 		}, 10, TimeUnit.SECONDS);
