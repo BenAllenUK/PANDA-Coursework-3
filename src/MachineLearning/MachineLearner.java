@@ -83,6 +83,7 @@ public class MachineLearner {
 							break;
 						} else if (i == orderedGeneList.size() - 1) {
 							orderedGeneList.add(gene);
+							break;
 						} else {
 							continue;
 						}
