@@ -28,7 +28,8 @@ public class MiniMaxHelper {
 	private final ScotlandYardView mViewController;
 	private final ScorerHelper mScorer;
 	private final ValidMoves mValidator;
-	private final ExecutorService mThreadPool;
+	private final ExecutorService mMovePool;
+	private final ExecutorService mScorerPool;
 	private int threadCount;
 	private int scoreCount;
 	private boolean finishUp;
@@ -39,8 +40,9 @@ public class MiniMaxHelper {
 		this.mScorer = mScorer;
 		this.mValidator = new ValidMoves(graph);
 
-		mThreadPool = Executors.newCachedThreadPool();
-//		mThreadPool = new ThreadPoolExecutor(THREAD_POOL_SIZE,
+		mMovePool = Executors.newFixedThreadPool(MOVE_SUBSET_SIZE);
+		mScorerPool = Executors.newCachedThreadPool();
+//		mMovePool = new ThreadPoolExecutor(THREAD_POOL_SIZE,
 //				THREAD_POOL_SIZE, 0L,
 //				TimeUnit.MILLISECONDS,
 //				new LifoBlockingDeque<Runnable>());
@@ -49,7 +51,7 @@ public class MiniMaxHelper {
 	public void begin(){
 		scoreCount = 0;
 		finishUp = false;
-//		mThreadPool.shutdownNow();
+//		mMovePool.shutdownNow();
 		final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 		executor.schedule(new Runnable() {
 			@Override
@@ -124,7 +126,7 @@ public class MiniMaxHelper {
 			if(state.getCurrentDepth() < 1){
 				//this route is taken on the first two depths and uses threads
 
-				ThreadWaiter<MiniMaxState> threadWaiter = new ThreadWaiter<MiniMaxState>(mThreadPool);
+				ThreadWaiter<MiniMaxState> threadWaiter = new ThreadWaiter<MiniMaxState>(mMovePool);
 
 				List<MiniMaxState> stateList = new ArrayList<MiniMaxState>();
 
@@ -176,55 +178,117 @@ public class MiniMaxHelper {
 						break;
 					}
 
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-
 				}
 				System.out.println("stateList = " + stateList);
 			}else {
 				//this is the normal path
 
-				for (final MoveDetails moveDetails : moveSubList) {
+				boolean nextMaxDepth = (state.getCurrentDepth()+1) == state.getPositions().size() * MAX_DEPTH;
 
+//				if(nextMaxDepth){
+//					bestState = processParallelScores(state, moveSubList, nextPlayer);
+//				}else {
 
-					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
+					for (final MoveDetails moveDetails : moveSubList) {
 
-					final MiniMaxState nextPlayersBestState = minimax(newState);
+						MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
 
-					nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
-					nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
+						final MiniMaxState nextPlayersBestState = minimax(newState);
 
-					if (nextPlayersBestState != null) {
+						nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
+						nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
 
-						if (bestState == null) {
-							bestState = nextPlayersBestState;
-						} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
-							if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
+						if (nextPlayersBestState != null) {
+
+							if (bestState == null) {
 								bestState = nextPlayersBestState;
-								state.alpha = Math.max(bestState.getCurrentScore(), state.alpha);
+							} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
+								if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
+									bestState = nextPlayersBestState;
+									state.alpha = Math.max(bestState.getCurrentScore(), state.alpha);
+								}
+							} else {
+								if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
+									bestState = nextPlayersBestState;
+									state.beta = Math.min(bestState.getCurrentScore(), state.beta);
+								}
 							}
-						} else {
-							if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
-								bestState = nextPlayersBestState;
-								state.beta = Math.min(bestState.getCurrentScore(), state.beta);
-							}
-						}
 
-						if (state.beta <= state.alpha) {
-							break;
+							if (state.beta <= state.alpha) {
+								break;
+							}
 						}
 					}
-				}
+//				}
 			}
 
 			return bestState;
 		}
 	}
 
-		/**
+	private MiniMaxState processParallelScores(final MiniMaxState state, final List<MoveDetails> moveSubList, final Colour nextPlayer) {
+
+		ThreadWaiter<MiniMaxState> threadWaiter = new ThreadWaiter<MiniMaxState>(mMovePool);
+
+		List<MiniMaxState> stateList = new ArrayList<MiniMaxState>();
+
+		List<Callable<MiniMaxState>> callables = new ArrayList<>();
+
+		for (final MoveDetails moveDetails : moveSubList) {
+
+			callables.add(new Callable<MiniMaxState>() {
+				@Override
+				public MiniMaxState call() throws Exception {
+
+					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
+
+					final MiniMaxState nextPlayersBestState = minimax(newState);
+
+					nextPlayersBestState.setCurrentScore(mScorer.score(nextPlayersBestState, mValidator, mViewController));
+
+					nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
+					nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
+					return nextPlayersBestState;
+				}
+			});
+
+		}
+		threadWaiter.thread(callables);
+
+		MiniMaxState bestState = null;
+		while(!threadWaiter.isFinished()){
+
+
+
+			final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
+
+			if (nextPlayersBestState != null) {
+
+				stateList.add(nextPlayersBestState);
+				if (bestState == null) {
+					bestState = nextPlayersBestState;
+				} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
+					if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
+						bestState = nextPlayersBestState;
+					}
+				} else {
+					if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
+						bestState = nextPlayersBestState;
+					}
+				}
+
+			}
+
+			if(threadWaiter.isFinished()){
+				break;
+			}
+
+		}
+
+		return bestState;
+	}
+
+	/**
 		 * Acts a rotating stack and gets the next player in the cycle
 		 * @param player the current player
 		 * @param players list of all players

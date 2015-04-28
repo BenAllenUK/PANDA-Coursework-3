@@ -1,7 +1,6 @@
 package MachineLearning;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -11,7 +10,7 @@ public class MachineLearner {
 	private static final int GENE_TESTS = 3;
 	private GenePool mGenePool;
 	private String newLine = System.getProperty("line.separator");
-	private GameInstance currentGameInstance;
+	private GameInstanceV2 currentGameInstance;
 
 	public MachineLearner(final int poolNumber) {
 
@@ -106,15 +105,8 @@ public class MachineLearner {
 
 	private GameResult playGame(final Gene gene) {
 
-		gene.apply();
-
-		try {
-
-			currentGameInstance = new GameInstance();
-			final GameResult gameResult = currentGameInstance.startGame();
-			return gameResult;
-		} catch (IOException e) {
-			return null;
-		}
+		currentGameInstance = new GameInstanceV2(gene);
+		final GameResult gameResult = currentGameInstance.start();
+		return gameResult;
 	}
 }
