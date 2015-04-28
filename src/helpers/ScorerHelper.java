@@ -244,7 +244,7 @@ public class ScorerHelper {
 
 		int currentRound = viewController.getRound() + round + offset;
 
-		if(viewController.getRounds().get(currentRound)){
+		if(currentRound < viewController.getRounds().size() && viewController.getRounds().get(currentRound)){
 			return StaticConstants.VISIBLE_ROUND_WEIGHT;
 		}else{
 			return StaticConstants.INVISIBLE_ROUND_WEIGHT;
