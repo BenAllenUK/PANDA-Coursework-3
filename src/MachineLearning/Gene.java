@@ -1,7 +1,5 @@
 package MachineLearning;
 
-import helpers.ScorerHelper;
-
 import java.util.Random;
 
 /**
@@ -109,13 +107,13 @@ public class Gene {
 	}
 
 	public void apply(){
-		ScorerHelper.MEAN_DIST_WEIGHT = MEAN_DIST_WEIGHT;
-		ScorerHelper.MOVE_WEIGHT = MOVE_WEIGHT;
-		ScorerHelper.SECRET_MOVE_WEIGHT = SECRET_MOVE_WEIGHT;
-		ScorerHelper.VISIBLE_ROUND_WEIGHT = VISIBLE_ROUND_WEIGHT;
-		ScorerHelper.INVISIBLE_ROUND_WEIGHT = INVISIBLE_ROUND_WEIGHT;
-		ScorerHelper.SD_DIST_WEIGHT = SD_DIST_WEIGHT;
-		ScorerHelper.BOAT_WEIGHT = BOAT_WEIGHT;
+		StaticConstants.MEAN_DIST_WEIGHT = MEAN_DIST_WEIGHT;
+		StaticConstants.MOVE_WEIGHT = MOVE_WEIGHT;
+		StaticConstants.SECRET_MOVE_WEIGHT = SECRET_MOVE_WEIGHT;
+		StaticConstants.VISIBLE_ROUND_WEIGHT = VISIBLE_ROUND_WEIGHT;
+		StaticConstants.INVISIBLE_ROUND_WEIGHT = INVISIBLE_ROUND_WEIGHT;
+		StaticConstants.SD_DIST_WEIGHT = SD_DIST_WEIGHT;
+		StaticConstants.BOAT_WEIGHT = BOAT_WEIGHT;
 	}
 
 	@Override

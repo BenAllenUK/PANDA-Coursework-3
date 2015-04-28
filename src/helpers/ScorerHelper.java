@@ -1,5 +1,6 @@
 package helpers;
 
+import MachineLearning.StaticConstants;
 import models.DataPosition;
 import models.DataSave;
 import models.MiniMaxState;
@@ -21,13 +22,7 @@ import java.util.Set;
  * Created by benallen on 10/04/15.
  */
 public class ScorerHelper {
-	public static double MEAN_DIST_WEIGHT = 1;
-	public static double MOVE_WEIGHT = 1;
-	public static double SECRET_MOVE_WEIGHT = 1;
-	public static double VISIBLE_ROUND_WEIGHT = 1;
-	public static double INVISIBLE_ROUND_WEIGHT = 1;
-	public static double SD_DIST_WEIGHT = 1;
-	public static double BOAT_WEIGHT = 1;
+
 	private final ScotlandYardView viewController;
 	private final ShortestPathHelper mShortestPathHelper;
 	private DataSave mGraphData;
@@ -207,9 +202,9 @@ public class ScorerHelper {
 			final double roundComponent = getRoundComponent(state, viewController, 0);
 			final double nextRoundComponent = getRoundComponent(state, viewController, 1);
 			final double lastMoveTypeComponent = getMoveComponent(state.getLastMove(state.getRootPlayerColour()));
-			final double moveComponent = outBoundMoveCount * MOVE_WEIGHT;
-			final double meanDistComponent = mean * MEAN_DIST_WEIGHT;
-			final double sdDistComponent = sd * SD_DIST_WEIGHT;
+			final double moveComponent = outBoundMoveCount * StaticConstants.MOVE_WEIGHT;
+			final double meanDistComponent = mean * StaticConstants.MEAN_DIST_WEIGHT;
+			final double sdDistComponent = sd * StaticConstants.SD_DIST_WEIGHT;
 			final double boatComponent = getBoatComponent(state.getPositions().get(state.getRootPlayerColour()));
 			//proximity to centre
 			//boat distance
@@ -241,7 +236,7 @@ public class ScorerHelper {
 		closestBoat = Math.min(closestBoat, mShortestPathHelper.shortestPath(location, 115).size());
 		closestBoat = Math.min(closestBoat, mShortestPathHelper.shortestPath(location, 108).size());
 
-		return closestBoat * BOAT_WEIGHT;
+		return closestBoat * StaticConstants.BOAT_WEIGHT;
 	}
 
 	private double getRoundComponent(final MiniMaxState state, final ScotlandYardView viewController, final int offset) {
@@ -250,9 +245,9 @@ public class ScorerHelper {
 		int currentRound = viewController.getRound() + round + offset;
 
 		if(viewController.getRounds().get(currentRound)){
-			return VISIBLE_ROUND_WEIGHT;
+			return StaticConstants.VISIBLE_ROUND_WEIGHT;
 		}else{
-			return INVISIBLE_ROUND_WEIGHT;
+			return StaticConstants.INVISIBLE_ROUND_WEIGHT;
 		}
 
 	}
@@ -267,7 +262,7 @@ public class ScorerHelper {
 
 		switch (targetTicket){
 			case Secret:
-				return SECRET_MOVE_WEIGHT;
+				return StaticConstants.SECRET_MOVE_WEIGHT;
 			default:
 				return 0;
 		}
