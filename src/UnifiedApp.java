@@ -81,7 +81,11 @@ public class UnifiedApp {
 					err.printStackTrace();
 				}
 			}
-
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -97,7 +101,7 @@ public class UnifiedApp {
 				@Override
 				public void run() {
 						try {
-							Thread.sleep(200);
+							Thread.sleep(4000);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}

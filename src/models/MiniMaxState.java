@@ -1,13 +1,11 @@
 package models;
 
 import helpers.Constants;
+import helpers.MrXTicketInfo;
 import scotlandyard.Colour;
 import scotlandyard.Ticket;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by rory on 24/04/15.
@@ -20,9 +18,8 @@ public class MiniMaxState {
 	private HashMap<Colour, Integer> positions;
 	private Colour currentPlayer;
 	private HashMap<Colour, MoveDetails> lastMoves;
-	private List<Ticket> mrXTicketsUsed;
 	private int currentScore;
-
+	private List<Ticket> mrXTickets;
 	private int currentDepth;
 	public int alpha = Integer.MIN_VALUE;
 	public int beta = Integer.MAX_VALUE;
@@ -32,10 +29,10 @@ public class MiniMaxState {
 		this.positions = positions;
 		this.tickets = tickets;
 		this.rootPlayer = rootPlayer;
-		lastMoves = new HashMap<Colour, MoveDetails>();
+		lastMoves = new HashMap<>();
 		this.rounds = rounds;
 		this.roundNumber = roundNumber;
-		this.mrXTicketsUsed = mrXTicketsUsed;
+		mrXTickets = mrXTicketsUsed;
 	}
 
 	public MiniMaxState copyFromMove(final MoveDetails moveDetails, final Colour nextPlayer) {
@@ -60,7 +57,7 @@ public class MiniMaxState {
 		if(nextPlayer == Constants.MR_X_COLOUR){
 			newRoundNumber++;
 		}
-		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer, rounds, newRoundNumber, mrXTicketsUsed);
+		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer, rounds, newRoundNumber, new LinkedList<>(mrXTickets));
 
 		final HashMap<Colour, MoveDetails> lastMovesClone = new HashMap<Colour, MoveDetails>();
 
@@ -77,12 +74,17 @@ public class MiniMaxState {
 		return newState;
 	}
 
+	/**
+	 * Update mr xs used tickets
+	 * @param moveDetails the move carried out
+	 */
 	private void updateMrXTicketsUsed(MoveDetails moveDetails) {
 		if(Constants.MR_X_COLOUR == currentPlayer) {
 			if (moveDetails.isDouble()) {
-				mrXTicketsUsed.add(Ticket.Double);
+				mrXTickets.add(moveDetails.getTicket1());
+				mrXTickets.add(moveDetails.getTicket2());
 			} else {
-				mrXTicketsUsed.add(moveDetails.getTicket1());
+				mrXTickets.add(moveDetails.getTicket1());
 			}
 		}
 	}
@@ -224,7 +226,4 @@ public class MiniMaxState {
 		return roundNumber;
 	}
 
-	public List<Ticket> getMrXTicketsUsed() {
-		return mrXTicketsUsed;
-	}
 }

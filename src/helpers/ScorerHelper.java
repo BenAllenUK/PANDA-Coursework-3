@@ -146,85 +146,85 @@ public class ScorerHelper {
 	}
 
 	public int score(final MiniMaxState state, final ValidMoves validMoves, final ScotlandYardView viewController) {
+		if (state.getRootPlayerColour() == Constants.MR_X_COLOUR && !StaticConstants.PLAY_GAME_NORMALLY) {
+			return scoreForMrX(state, validMoves, viewController);
+		} else {
+			return scoreForDetective(state);
+		}
+	}
 
+	private int scoreForDetective(MiniMaxState state) {
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
-		if (state.getRootPlayerColour() == Constants.MR_X_COLOUR && !StaticConstants.PLAY_GAME_NORMALLY) {
+		final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, state.getPositions().get(state.getRootPlayerColour()));
 
-			final float divider = state.getPositions().size() - 1;
+		final int distComponent;
 
-			float mean = 0;
-			double sd = 0;
+		if (dataPositions != null) {
+            distComponent = (dataPositions.size() - 1);
+        } else {
+            distComponent = Integer.MAX_VALUE;
+        }
 
-			HashMap<Integer, Float> distancesMap = new HashMap<Integer, Float>();
+		return distComponent;
+	}
 
-			for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
+	private int scoreForMrX(MiniMaxState state, ValidMoves validMoves, ScotlandYardView viewController) {
+		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
-				if (position.getKey() != Constants.MR_X_COLOUR) {
-					final Integer pos = position.getValue();
-					final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
-					if (dataPositions != null) {
-						final float distance = (dataPositions.size() - 1);
-						distancesMap.put(pos, distance);
-						mean += distance / divider;
-					} else {
-					}
-				} else {
+		final float divider = state.getPositions().size() - 1;
 
-				}
-			}
+		float mean = 0;
+		double sd = 0;
 
-			for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
+		HashMap<Integer, Float> distancesMap = new HashMap<>();
 
-				if (position.getKey() != Constants.MR_X_COLOUR) {
-					final Integer pos = position.getValue();
-					final Float dataPosition = distancesMap.get(pos);
-					if (dataPosition != null) {
-						final float distance = dataPosition;
-						sd += ((mean-distance)*(mean-distance)) / divider;
-					} else {
-					}
-				} else {
+		for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
-				}
-			}
+            if (position.getKey() != Constants.MR_X_COLOUR) {
+                final Integer pos = position.getValue();
+                final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
+                if (dataPositions != null) {
+                    final float distance = (dataPositions.size() - 1);
+                    distancesMap.put(pos, distance);
+                    mean += distance / divider;
+                }
+            }
+        }
 
-			sd = Math.sqrt(sd);
+		for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
-			final Set<Move> moves = validMoves.validMoves(
-					state.getPositions().get(state.getCurrentPlayer()),
-					state.getTicketsForCurrentPlayer(),
-					state.getCurrentPlayer(),
-					state.getPositions()
-			);
-			final int outBoundMoveCount = moves.size();
+            if (position.getKey() != Constants.MR_X_COLOUR) {
+                final Integer pos = position.getValue();
+                final Float dataPosition = distancesMap.get(pos);
+                if (dataPosition != null) {
+                    final float distance = dataPosition;
+                    sd += ((mean-distance)*(mean-distance)) / divider;
+                }
+            }
+        }
 
-			final double roundComponent = getRoundComponent(state, viewController, 0);
-			final double nextRoundComponent = getRoundComponent(state, viewController, 1);
-			final double lastMoveTypeComponent = getMoveComponent(state.getLastMove(state.getRootPlayerColour()));
-			final double moveComponent = outBoundMoveCount * StaticConstants.MOVE_WEIGHT;
-			final double meanDistComponent = mean * StaticConstants.MEAN_DIST_WEIGHT;
-			final double sdDistComponent = sd * StaticConstants.SD_DIST_WEIGHT;
-			final double boatComponent = getBoatComponent(state.getPositions().get(state.getRootPlayerColour()));
-			//proximity to centre
-			//boat distance
+		sd = Math.sqrt(sd);
 
-			return (int) (meanDistComponent + sdDistComponent + moveComponent + lastMoveTypeComponent + roundComponent + nextRoundComponent + boatComponent);
+		final Set<Move> moves = validMoves.validMoves(
+                state.getPositions().get(state.getCurrentPlayer()),
+                state.getTicketsForCurrentPlayer(),
+                state.getCurrentPlayer(),
+                state.getPositions()
+        );
+		final int outBoundMoveCount = moves.size();
 
-		} else {
+		final double roundComponent = getRoundComponent(state, viewController, 0);
+		final double nextRoundComponent = getRoundComponent(state, viewController, 1);
+		final double lastMoveTypeComponent = getMoveComponent(state.getLastMove(state.getRootPlayerColour()));
+		final double moveComponent = outBoundMoveCount * StaticConstants.MOVE_WEIGHT;
+		final double meanDistComponent = mean * StaticConstants.MEAN_DIST_WEIGHT;
+		final double sdDistComponent = sd * StaticConstants.SD_DIST_WEIGHT;
+		final double boatComponent = getBoatComponent(state.getPositions().get(state.getRootPlayerColour()));
+		//proximity to centre
+		//boat distance
 
-			final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, state.getPositions().get(state.getRootPlayerColour()));
-
-			final int distComponent;
-
-			if (dataPositions != null) {
-				distComponent = (dataPositions.size() - 1);
-			} else {
-				distComponent = Integer.MAX_VALUE;
-			}
-
-			return distComponent;
-		}
+		return (int) (meanDistComponent + sdDistComponent + moveComponent + lastMoveTypeComponent + roundComponent + nextRoundComponent + boatComponent);
 	}
 
 	private double getBoatComponent(int location) {

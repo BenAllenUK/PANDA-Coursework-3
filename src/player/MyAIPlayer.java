@@ -1,9 +1,6 @@
 package player;
 
-import helpers.Constants;
-import helpers.FutureHelper;
-import helpers.MiniMaxHelper;
-import helpers.ScorerHelper;
+import helpers.*;
 import models.MiniMaxState;
 import models.MoveDetails;
 import scotlandyard.Colour;
@@ -30,7 +27,6 @@ public class MyAIPlayer implements Player {
 	private final ScotlandYardView mViewController;
 	private final ScotlandYardMap mGameMap;
 	private final ScorerHelper mScorer;
-	private final List<Ticket> mrXMovesPlayed;
 	private final FutureHelper mFuture;
 	private Graph<Integer, Route> mGraph;
 
@@ -50,7 +46,6 @@ public class MyAIPlayer implements Player {
 		mGameMap = new ScotlandYardMap(mGraph);
 		mScorer = new ScorerHelper(mViewController, mGameMap);
 		mFuture = new FutureHelper(mViewController, mGameMap, mScorer, mGraph);
-		mrXMovesPlayed = new LinkedList<>();
 	}
 
 	@Override
@@ -84,7 +79,9 @@ public class MyAIPlayer implements Player {
 		}
 
 		final long startMillis = System.currentTimeMillis();
-		MiniMaxState initialState = new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer, mViewController.getRounds(), mViewController.getRound(), new LinkedList<>(mrXMovesPlayed));
+		List<Ticket> ticketsUsed = new LinkedList<>(MrXTicketInfo.getTicketsUsed());
+
+		MiniMaxState initialState = new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer, mViewController.getRounds(), mViewController.getRound(), ticketsUsed);
 
 		final MiniMaxHelper mMiniMaxHelper = new MiniMaxHelper(mViewController, mScorer, mGraph);
 
@@ -102,13 +99,13 @@ public class MyAIPlayer implements Player {
 
 		if(currentPlayer == Constants.MR_X_COLOUR){
 			if(bestMoveDetails.isDouble()){
-				mrXMovesPlayed.add(bestMoveDetails.getTicket1());
-				mrXMovesPlayed.add(bestMoveDetails.getTicket2());
+				MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket1());
+				MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket2());
 			} else {
-				mrXMovesPlayed.add(bestMoveDetails.getTicket1());
+				MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket1());
 			}
 		}
-		System.out.println("mrXMovesPlayed = " + mrXMovesPlayed);
+		System.err.println("mrXMovesPlayed2 = " + MrXTicketInfo.getTicketsUsed());
 		System.out.println("mViewController.getRound = " + mViewController.getRound());
 		return bestMoveDetails.getMove();
 	}
