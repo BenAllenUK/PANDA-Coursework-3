@@ -108,6 +108,41 @@ public class ScorerHelper {
 
 			return (int) (meanDistComponent + sdDistComponent + moveComponent + lastMoveTypeComponent + roundComponent + nextRoundComponent + boatComponent);
 
+		} else if(state.getRootPlayerColour() == Constants.MR_X_COLOUR){
+
+			//this is Mr X's standard 'minimum distance from detective' mode
+			int nearestDistance = Integer.MAX_VALUE;
+
+			// Otherwise calculate the average from mrX and all the other players
+			for (Colour player : viewController.getPlayers()) {
+
+				// Avoid checking MrX's distance to himself
+				if (player != Constants.MR_X_COLOUR) {
+
+					// Get their location
+					int playerLocation = state.getPositions().get(player);
+
+					// Get a list of their nodes
+					Set<DataPosition> distanceBetween = mShortestPathHelper.shortestPath(mrXPos, playerLocation);
+
+					int distanceBetweenNodes;
+
+					// If there is no distance then the game is over
+					if (distanceBetween == null) {
+						distanceBetweenNodes = 0;
+					} else {
+						distanceBetweenNodes = distanceBetween.size() - 1;
+					}
+
+					if(distanceBetweenNodes < nearestDistance){
+						nearestDistance = distanceBetweenNodes;
+					}
+
+				}
+			}
+
+			return nearestDistance;
+
 		} else {
 
 			final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, state.getPositions().get(state.getRootPlayerColour()));

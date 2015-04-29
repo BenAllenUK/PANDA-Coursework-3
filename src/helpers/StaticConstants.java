@@ -9,8 +9,8 @@ public class StaticConstants {
 	public static double SD_DIST_WEIGHT = 1;
 	public static double BOAT_WEIGHT = 1;
 	public static boolean PLAY_GAME_WITHOUT_SCORING = true;
-	public static final boolean DEBUG_THREADS = false;
-	public static final boolean DEBUG_TIMINGS = false;
+	public static final boolean DEBUG_THREADS = true;
+	public static final boolean DEBUG_TIMINGS = true;
 	public static final boolean DEBUG_INFO = true;
 	public static final boolean DEBUG_VERBOSE = false;
 
