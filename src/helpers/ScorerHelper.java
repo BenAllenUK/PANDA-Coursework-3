@@ -113,11 +113,7 @@ public class ScorerHelper {
 				int distanceBetweenNodes;
 
 				// If there is no distance then the game is over
-				if (distanceBetween == null) {
-					distanceBetweenNodes = 0;
-				} else {
-					distanceBetweenNodes = distanceBetween.size() - 1;
-				}
+				distanceBetweenNodes = distanceBetween.size() - 1;
 
 				if(distanceBetweenNodes < nearestDistance){
 					nearestDistance = distanceBetweenNodes;
@@ -136,11 +132,8 @@ public class ScorerHelper {
 
 		final int distComponent;
 
-		if (dataPositions != null) {
-			distComponent = (dataPositions.size() - 1);
-		} else {
-			distComponent = Integer.MAX_VALUE;
-		}
+		distComponent = (dataPositions.size() - 1);
+
 		return distComponent;
 	}
 
@@ -159,11 +152,9 @@ public class ScorerHelper {
 			if (position.getKey() != Constants.MR_X_COLOUR) {
 				final Integer pos = position.getValue();
 				final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
-				if (dataPositions != null) {
-					final float distance = (dataPositions.size() - 1);
-					distancesMap.put(pos, distance);
-					mean += distance / divider;
-				}
+				final float distance = (dataPositions.size() - 1);
+				distancesMap.put(pos, distance);
+				mean += distance / divider;
 			}
 		}
 

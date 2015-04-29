@@ -109,7 +109,9 @@ public class ShortestPathHelper {
 
         }
 
-        Set<DataPosition> positionsList = null;
+        Set<DataPosition> positionsList = new HashSet<>();
+
+		positionsList.add(sourceHolder.dataPosition);
 
         if(targetHolder != null){
             positionsList = new HashSet<DataPosition>();
