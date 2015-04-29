@@ -296,6 +296,6 @@ public class ScorerHelper {
 	 * @return whether mr x is hidden or not
 	 */
 	public boolean isMrXHidden(List<Boolean> rounds, Integer thisRoundNumber) {
-		return !rounds.get(thisRoundNumber);
+		return thisRoundNumber >= rounds.size() || !rounds.get(thisRoundNumber);
 	}
 }
