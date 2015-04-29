@@ -1,9 +1,11 @@
+import helpers.Logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-/**
- * Created by rory on 28/04/15.
+/*
+	This class is used to launch the server, judge and client, all together
  */
 public class UnifiedApp {
 
@@ -18,10 +20,11 @@ public class UnifiedApp {
 
 			final Runtime runtime = Runtime.getRuntime();
 
-			boolean judgeReady = false;
 			boolean killingProcess = false;
 			boolean processFound = false;
 			String processToKill = null;
+
+			//kill any existing servers
 			while(processFound) {
 
 				if(processToKill != null && !killingProcess){
@@ -54,9 +57,10 @@ public class UnifiedApp {
 			}
 
 			processFound = false;
-			final Process serverProcess = runtime.exec("node server/server_service.js");
+			runtime.exec("node server/server_service.js");
 
 
+			//wait for the service to appear
 			while(!processFound) {
 
 				try {
@@ -82,22 +86,25 @@ public class UnifiedApp {
 				}
 			}
 
+			//launch judge
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 
 					JudgeService.main(new String[]{"localhost", "8123", "1"});
 
-					System.out.println("Judge exited");
+					Logger.logInfo("Judge exited");
 
 				}
 			}).start();
 
+			//launch player
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
+					//wait an arbitrary duration for judge to connect
 						try {
-							Thread.sleep(200);
+							Thread.sleep(2000);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -108,7 +115,7 @@ public class UnifiedApp {
 						e.printStackTrace();
 					}
 
-					System.out.println("Player exited");
+					Logger.logInfo("Player exited");
 				}
 			}).start();
 

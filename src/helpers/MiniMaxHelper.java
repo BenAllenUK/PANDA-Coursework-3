@@ -7,7 +7,7 @@ import scotlandyard.Graph;
 import scotlandyard.Move;
 import scotlandyard.Route;
 import scotlandyard.ScotlandYardView;
-import threads.ThreadWaiter;
+import threads.ThreadManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -24,14 +25,14 @@ import java.util.concurrent.TimeUnit;
 public class MiniMaxHelper {
 	private static final int MAX_DEPTH = 1;
 	private static final int MOVE_SUBSET_SIZE = 20;
-	private static final boolean LOG_THREADS = false;
 	private final ScotlandYardView mViewController;
 	private final ScorerHelper mScorer;
 	private final ValidMoves mValidator;
 	private final ExecutorService mMovePool;
-	private int threadCount;
+	private final ScheduledThreadPoolExecutor scheduledExecutor;
 	private int scoreCount;
 	private boolean finishUp;
+	private ScheduledFuture<?> finishUpHandler;
 
 	public MiniMaxHelper(ScotlandYardView mViewController, ScorerHelper mScorer, Graph<Integer, Route> graph) {
 
@@ -40,62 +41,52 @@ public class MiniMaxHelper {
 		this.mValidator = new ValidMoves(graph);
 
 		mMovePool = Executors.newFixedThreadPool(MOVE_SUBSET_SIZE);
+		scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+
 	}
 
 	public void begin(){
 		scoreCount = 0;
 		finishUp = false;
-//		mMovePool.shutdownNow();
-		final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
-		executor.schedule(new Runnable() {
+
+		if(finishUpHandler != null){
+			finishUpHandler.cancel(true);
+		}
+
+		finishUpHandler = scheduledExecutor.schedule(new Runnable() {
 			@Override
 			public void run() {
-//				System.err.println("10 seconds is up, stop what you're doing!");
+				Logger.logTiming("10 seconds is up, stop what you're doing!");
 				finishUp = true;
 			}
 		}, 10, TimeUnit.SECONDS);
+
 	}
 	public MiniMaxState minimax(final MiniMaxState state) {
 		boolean atMaxDepth = state.getCurrentDepth() == state.getPositions().size() * MAX_DEPTH;
 
-//		System.out.println("minimaxing");
 		if (atMaxDepth || finishUp) {
 			//score where we are
 
-//			System.out.println("score start");
-
-			if(!atMaxDepth){
-//				System.err.println("Prematurely exiting");
-			}
 			state.setCurrentScore(mScorer.score(state, mValidator, mViewController));
 			scoreCount++;
-//			System.out.println("score " + scoreCount + " complete");
 
-//			System.out.println("score finish");
+			Logger.logVerbose("score " + scoreCount + " complete");
+
 			return state;
 		} else {
 
-//			System.out.println("recursing");
-			final List<Move> moves = new ArrayList<Move>(mValidator.validMoves(
+			final List<Move> moves = new ArrayList<>(mValidator.validMoves(
 					state.getPositions().get(state.getCurrentPlayer()),
 					state.getTicketsForCurrentPlayer(),
 					state.getCurrentPlayer(),
 					state.getPositions()
 			));
 
-//			for(Move move : moves){
-//				if(move instanceof MoveTicket){
-//					if(((MoveTicket)move).ticket == null){
-//						new Exception().printStackTrace();
-//						System.exit(1);
-//					}
-//				}
-//			}
-
 			final Colour nextPlayer = nextPlayer(state.getCurrentPlayer(), mViewController.getPlayers());
 
 			//shuffle the list of moves and take the first few so we get a random sample
-			List<MoveDetails> moveSubList = new ArrayList<MoveDetails>();
+			List<MoveDetails> moveSubList = new ArrayList<>();
 
 			Collections.shuffle(moves);
 
@@ -103,31 +94,20 @@ public class MiniMaxHelper {
 
 				final MoveDetails moveDetails = new MoveDetails(moves.get(i));
 
-				boolean shouldContinue = false;
-
-				//don't take multiple moves that end up in the same place
-//				for(MoveDetails move : moveSubList){
-//					if(move.getEndTarget() == moveDetails.getEndTarget()){
-//						shouldContinue = true;
-//						break;
-//					}
-//				}
-
-				if(shouldContinue){
-					continue;
-				}
 				moveSubList.add(moveDetails);
 
 			}
 
+			//we now have a random subset of the initial moves list
+
 			MiniMaxState bestState = null;
 
-			if(state.getCurrentDepth() < 1){
-				//this route is taken on the first two depths and uses threads
+			//on the first iteration thread the moves so that we can get more done
+			if(state.getCurrentDepth() == 0){
 
-				ThreadWaiter<MiniMaxState> threadWaiter = new ThreadWaiter<MiniMaxState>(mMovePool);
+				ThreadManager<MiniMaxState> threadManager = new ThreadManager<>(mMovePool);
 
-				List<MiniMaxState> stateList = new ArrayList<MiniMaxState>();
+				List<MiniMaxState> stateList = new ArrayList<>();
 
 				List<Callable<MiniMaxState>> callables = new ArrayList<>();
 
@@ -137,7 +117,6 @@ public class MiniMaxHelper {
 						@Override
 						public MiniMaxState call() throws Exception {
 
-//							System.out.println("threading");
 							MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
 
 							final MiniMaxState nextPlayersBestState = minimax(newState);
@@ -149,13 +128,14 @@ public class MiniMaxHelper {
 					});
 
 				}
-				threadWaiter.thread(callables);
 
-				while(!threadWaiter.isFinished()){
+				//start threading
+				threadManager.thread(callables);
 
-//					System.out.println("spinning");
+				//wait for the responses to come back, we'll block until then
+				while(!threadManager.isFinished()){
 
-					final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
+					final MiniMaxState nextPlayersBestState = threadManager.getNext();
 
 					if (nextPlayersBestState != null) {
 
@@ -174,25 +154,17 @@ public class MiniMaxHelper {
 
 					}
 
-					if(threadWaiter.isFinished()){
+					if(threadManager.isFinished()){
 						break;
 					}
 
 				}
-				System.out.println("stateList = " + stateList);
+				Logger.logVerbose("stateList = " + stateList);
 			}else {
-				//this is the normal path
 
-				boolean nextMaxDepth = (state.getCurrentDepth()+1) == state.getPositions().size() * MAX_DEPTH;
-
-//				if(nextMaxDepth){
-//					bestState = processParallelScores(state, moveSubList, nextPlayer);
-//				}else {
-
+				//check each move
 				for (final MoveDetails moveDetails : moveSubList) {
 
-//					System.out.println("foring");
-
 					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
 
 					final MiniMaxState nextPlayersBestState = minimax(newState);
@@ -200,99 +172,30 @@ public class MiniMaxHelper {
 					nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
 					nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
 
-					if (nextPlayersBestState != null) {
-
-//						System.out.println("state not null");
-
-						if (bestState == null) {
+					//if the move is a current best then update and do some
+					//alpha beta pruning
+					if (bestState == null) {
+						bestState = nextPlayersBestState;
+					} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
+						if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
 							bestState = nextPlayersBestState;
-						} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
-							if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
-								bestState = nextPlayersBestState;
-								state.alpha = Math.max(bestState.getCurrentScore(), state.alpha);
-							}
-						} else {
-							if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
-								bestState = nextPlayersBestState;
-								state.beta = Math.min(bestState.getCurrentScore(), state.beta);
-							}
+							state.alpha = Math.max(bestState.getCurrentScore(), state.alpha);
 						}
-
-						if (state.beta <= state.alpha) {
-//							System.out.println("breaking");
-							break;
+					} else {
+						if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
+							bestState = nextPlayersBestState;
+							state.beta = Math.min(bestState.getCurrentScore(), state.beta);
 						}
 					}
+
+					if (state.beta <= state.alpha) {
+						break;
+					}
 				}
-//				System.out.println("Done foring");
-//				}
 			}
 
-//			System.out.println("done calc");
 			return bestState;
 		}
-	}
-
-	private MiniMaxState processParallelScores(final MiniMaxState state, final List<MoveDetails> moveSubList, final Colour nextPlayer) {
-
-		ThreadWaiter<MiniMaxState> threadWaiter = new ThreadWaiter<MiniMaxState>(mMovePool);
-
-		List<MiniMaxState> stateList = new ArrayList<MiniMaxState>();
-
-		List<Callable<MiniMaxState>> callables = new ArrayList<>();
-
-		for (final MoveDetails moveDetails : moveSubList) {
-
-			callables.add(new Callable<MiniMaxState>() {
-				@Override
-				public MiniMaxState call() throws Exception {
-
-					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
-
-					final MiniMaxState nextPlayersBestState = minimax(newState);
-
-					nextPlayersBestState.setCurrentScore(mScorer.score(nextPlayersBestState, mValidator, mViewController));
-
-					nextPlayersBestState.setLastMove(state.getCurrentPlayer(), moveDetails);
-					nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
-					return nextPlayersBestState;
-				}
-			});
-
-		}
-		threadWaiter.thread(callables);
-
-		MiniMaxState bestState = null;
-		while(!threadWaiter.isFinished()){
-
-
-
-			final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
-
-			if (nextPlayersBestState != null) {
-
-				stateList.add(nextPlayersBestState);
-				if (bestState == null) {
-					bestState = nextPlayersBestState;
-				} else if (state.getCurrentPlayer() == Constants.MR_X_COLOUR) {
-					if (nextPlayersBestState.getCurrentScore() > bestState.getCurrentScore()) {
-						bestState = nextPlayersBestState;
-					}
-				} else {
-					if (nextPlayersBestState.getCurrentScore() < bestState.getCurrentScore()) {
-						bestState = nextPlayersBestState;
-					}
-				}
-
-			}
-
-			if(threadWaiter.isFinished()){
-				break;
-			}
-
-		}
-
-		return bestState;
 	}
 
 	/**

@@ -1,16 +1,13 @@
 package helpers;
 
-import MachineLearning.StaticConstants;
 import models.DataPosition;
 import models.DataSave;
 import models.MiniMaxState;
 import models.MoveDetails;
-import models.ScoreElement;
 import scotlandyard.Colour;
 import scotlandyard.Move;
 import scotlandyard.ScotlandYardView;
 import scotlandyard.Ticket;
-import solution.ScotlandYardMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,20 +15,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by benallen on 10/04/15.
- */
 public class ScorerHelper {
 
-	private final ScotlandYardView viewController;
 	private final ShortestPathHelper mShortestPathHelper;
 	private DataSave mGraphData;
-	private ScotlandYardMap gameMap;
 	private final DataParser mDataParser;
 
-	public ScorerHelper(ScotlandYardView vc, ScotlandYardMap gm) {
-		viewController = vc;
-		gameMap = gm;
+	public ScorerHelper() {
 		mDataParser = new DataParser();
 
 		try {
@@ -46,118 +36,30 @@ public class ScorerHelper {
 	}
 
 	/**
-	 * Will produce a list of scores for the current position
+	 * Calculates the score for the current board state. Uses a closest player algorithm normally, though by changing
+	 * {@link StaticConstants#PLAY_GAME_WITHOUT_SCORING} to false, it can se custom scoring weights
 	 *
-	 * @param location      the current location
-	 * @param moves         the available moves
-	 * @param currentPlayer the current player
-	 * @return the element that was tested and its score i.e distance, move availability etc
+	 * @param state the current board state
+	 * @param validMoves a {@link ValidMoves} object
+	 * @param viewController a {@link ScotlandYardView}
+	 * @return a score for the current board state
 	 */
-	@Deprecated
-	public HashMap<ScoreElement, Float> score(int location, Set<Move> moves, Colour currentPlayer, HashMap<Colour, Integer> otherPlayerPositions) {
-
-		HashMap<ScoreElement, Float> scoreMap = new HashMap<ScoreElement, Float>();
-		// Rating based on distance
-		float distanceScore = getDistanceScore(location, currentPlayer, otherPlayerPositions);
-		scoreMap.put(ScoreElement.DISTANCE, distanceScore);
-
-		// Rating based on number of available moves
-		float movesScore = getMovesScore(moves);
-		scoreMap.put(ScoreElement.MOVE_AVAILABILITY, movesScore);
-
-		return scoreMap;
-	}
-
-	/**
-	 * Gets a score for the moves
-	 *
-	 * @param moves the future moves
-	 * @return the score
-	 */
-	@Deprecated
-	public float getMovesScore(Set<Move> moves) {
-		return moves.size() / Constants.MAX_CONNECTIONS_PER_NODE;
-	}
-
-	/**
-	 * Will get the distance between players and calculate a score
-	 *
-	 * @param location      the current testing location
-	 * @param currentPlayer the current player to test on
-	 * @return the score for this location
-	 */
-	public float getDistanceScore(int location, Colour currentPlayer, HashMap<Colour, Integer> otherPlayerPositions) {
-		float averageDistanceFromTargets = 0;
-
-		if (currentPlayer == Constants.MR_X_COLOUR && location == 44) {
-			int f = 0;
-		}
-		// Is this player MRX or not?
-		if (currentPlayer != Constants.MR_X_COLOUR) {
-
-			// If its a detective then calculate the distance between the player and mrX use this to calculate the score
-			Set<DataPosition> nodesBetween = mShortestPathHelper.shortestPath(location, otherPlayerPositions.get(Constants.MR_X_COLOUR));
-
-			// If the list of nodes is 0 then the distance must be 0
-			if (nodesBetween == null) {
-				averageDistanceFromTargets = 0;
-			} else {
-				averageDistanceFromTargets = nodesBetween.size() - 1;
-			}
-		} else {
-
-			int nearestDistance = Integer.MAX_VALUE;
-
-			// Otherwise calculate the average from mrX and all the other players
-			for (Colour player : viewController.getPlayers()) {
-
-				// Avoid checking MrX's distance to himself
-				if (player != currentPlayer) {
-
-					// Get their location
-					int playerLocation = otherPlayerPositions.get(player);
-
-					// Get a list of their nodes
-					Set<DataPosition> distanceBetween = mShortestPathHelper.shortestPath(location, playerLocation);
-
-					int distanceBetweenNodes;
-
-					// If there is no distance then the game is over
-					if (distanceBetween == null) {
-						distanceBetweenNodes = 0;
-					} else {
-						distanceBetweenNodes = distanceBetween.size() - 1;
-					}
-
-					if (distanceBetweenNodes < nearestDistance) {
-						nearestDistance = distanceBetweenNodes;
-					}
-
-					// Get the distance between the nodes and then add it onto the running total
-					averageDistanceFromTargets += distanceBetweenNodes / (float) otherPlayerPositions.size();
-				}
-			}
-
-			return nearestDistance;
-		}
-		// Calculate score on distance
-		final float distanceScore = averageDistanceFromTargets;// / Constants.MAX_DISTANCE_BETWEEN_NODES;
-		return distanceScore;
-	}
-
 	public int score(final MiniMaxState state, final ValidMoves validMoves, final ScotlandYardView viewController) {
 
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
-		if (state.getRootPlayerColour() == Constants.MR_X_COLOUR && !StaticConstants.PLAY_GAME_NORMALLY) {
+
+		//uses special combined scoring weights, otherwise a closest player algorithm
+		if (state.getRootPlayerColour() == Constants.MR_X_COLOUR && !StaticConstants.PLAY_GAME_WITHOUT_SCORING) {
 
 			final float divider = state.getPositions().size() - 1;
 
 			float mean = 0;
 			double sd = 0;
 
-			HashMap<Integer, Float> distancesMap = new HashMap<Integer, Float>();
+			HashMap<Integer, Float> distancesMap = new HashMap<>();
 
+			//calculate mean
 			for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
 				if (position.getKey() != Constants.MR_X_COLOUR) {
@@ -167,13 +69,11 @@ public class ScorerHelper {
 						final float distance = (dataPositions.size() - 1);
 						distancesMap.put(pos, distance);
 						mean += distance / divider;
-					} else {
 					}
-				} else {
-
 				}
 			}
 
+			//calculate standard deviation
 			for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
 				if (position.getKey() != Constants.MR_X_COLOUR) {
@@ -182,10 +82,7 @@ public class ScorerHelper {
 					if (dataPosition != null) {
 						final float distance = dataPosition;
 						sd += ((mean-distance)*(mean-distance)) / divider;
-					} else {
 					}
-				} else {
-
 				}
 			}
 
@@ -227,6 +124,13 @@ public class ScorerHelper {
 		}
 	}
 
+	/**
+	 * Gets the boat component for the weight scoring algorithm
+	 *
+	 * @param location current player's location
+	 *
+	 * @return the closest boat position multiplied by {@link StaticConstants#BOAT_WEIGHT}
+	 */
 	private double getBoatComponent(int location) {
 
 		int closestBoat = Integer.MAX_VALUE;
@@ -239,6 +143,15 @@ public class ScorerHelper {
 		return closestBoat * StaticConstants.BOAT_WEIGHT;
 	}
 
+	/**
+	 * Gets the round component for the weight scoring algorithm
+	 *
+	 * @param state the current board state
+	 * @param viewController the view controller
+	 * @param offset round offset past after the current round
+	 * @return {@link StaticConstants#VISIBLE_ROUND_WEIGHT} if the selected round is visible,
+	 * {@link StaticConstants#INVISIBLE_ROUND_WEIGHT} if the selected round is invisible
+	 */
 	private double getRoundComponent(final MiniMaxState state, final ScotlandYardView viewController, final int offset) {
 		int round = state.getCurrentDepth() / state.getPositions().size();
 
@@ -252,6 +165,13 @@ public class ScorerHelper {
 
 	}
 
+	/**
+	 * Gets the move component for the weight scoring algorithm, based on whether the last move
+	 * was a secret one or not
+	 *
+	 * @param lastMove the last move
+	 * @return {@link StaticConstants#SECRET_MOVE_WEIGHT} if the last move was a secret one
+	 */
 	private double getMoveComponent(final MoveDetails lastMove) {
 		final Ticket targetTicket;
 		if(lastMove.getTicket2() == null) {

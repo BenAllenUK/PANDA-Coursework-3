@@ -1,9 +1,12 @@
 package MachineLearning;
 
+import helpers.ScorerHelper;
+import helpers.StaticConstants;
+
 import java.util.Random;
 
 /**
- * Created by rory on 27/04/15.
+ * A Gene represents a weight configuration, used in {@link ScorerHelper#score}
  */
 public class Gene {
 	private static final int RAND_BOUND = 40;

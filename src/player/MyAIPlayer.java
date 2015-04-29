@@ -1,7 +1,7 @@
 package player;
 
 import helpers.Constants;
-import helpers.FutureHelper;
+import helpers.Logger;
 import helpers.MiniMaxHelper;
 import helpers.ScorerHelper;
 import models.MiniMaxState;
@@ -17,7 +17,12 @@ import scotlandyard.Ticket;
 import solution.ScotlandYardMap;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * The MyAIPlayer class is a AI that uses scores to determine the next move. Since the
@@ -28,10 +33,8 @@ import java.util.*;
  */
 public class MyAIPlayer implements Player {
 	private final ScotlandYardView mViewController;
-	private final ScotlandYardMap mGameMap;
 	private final ScorerHelper mScorer;
 	private final List<Ticket> mrXMovesPlayed;
-	private final FutureHelper mFuture;
 	private Graph<Integer, Route> mGraph;
 
 	public MyAIPlayer(ScotlandYardView view, String graphFilename) {
@@ -47,9 +50,8 @@ public class MyAIPlayer implements Player {
 
 		// Update globals
 		mViewController = view;
-		mGameMap = new ScotlandYardMap(mGraph);
-		mScorer = new ScorerHelper(mViewController, mGameMap);
-		mFuture = new FutureHelper(mViewController, mGameMap, mScorer, mGraph);
+		final ScotlandYardMap gameMap = new ScotlandYardMap(mGraph);
+		mScorer = new ScorerHelper();
 		mrXMovesPlayed = new LinkedList<>();
 	}
 
@@ -58,59 +60,74 @@ public class MyAIPlayer implements Player {
 
 		final Colour currentPlayer = mViewController.getCurrentPlayer();
 
-		HashMap<Colour, HashMap<Ticket, Integer>> playerTicketNumbers = new HashMap<Colour, HashMap<Ticket, Integer>>();
-        HashMap<Colour, Integer> playerPositions = new HashMap<Colour, Integer>();
-        for (Colour thisPlayer : mViewController.getPlayers()) {
+		//build the state
+		MiniMaxState initialState = buildInitialState(currentPlayer, location);
 
-			if(currentPlayer == Constants.MR_X_COLOUR && thisPlayer == Constants.MR_X_COLOUR){
-				playerPositions.put(thisPlayer, location);
-			}else {
-				playerPositions.put(thisPlayer, mViewController.getPlayerLocation(thisPlayer));
-			}
-
-            HashMap<Ticket, Integer> currentTicketNumbers = new HashMap<Ticket, Integer>();
-            for (Ticket currentTicket : Ticket.values()) {
-                currentTicketNumbers.put(currentTicket, mViewController.getPlayerTickets(thisPlayer, currentTicket));
-            }
-            playerTicketNumbers.put(thisPlayer, currentTicketNumbers);
-		}
-
-		if(playerPositions.get(Constants.MR_X_COLOUR) == 0){
+		if(initialState.getPositions().get(Constants.MR_X_COLOUR) == 0){
 			if(currentPlayer == Constants.MR_X_COLOUR){
-				playerPositions.put(Constants.MR_X_COLOUR, location);
+				initialState.getPositions().put(Constants.MR_X_COLOUR, location);
 			}else {
+				//location unknown, detectives, disperse!
 				return new ArrayList<>(moves).get(new Random().nextInt(moves.size()-1));
 			}
 		}
 
 		final long startMillis = System.currentTimeMillis();
-		MiniMaxState initialState = new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer, mViewController.getRounds(), mViewController.getRound(), new LinkedList<>(mrXMovesPlayed));
 
 		final MiniMaxHelper mMiniMaxHelper = new MiniMaxHelper(mViewController, mScorer, mGraph);
 
 		mMiniMaxHelper.begin();
 
+		Logger.logInfo(currentPlayer+" starting their minimax, currently @ "+location);
+
+		//begin the minimaxing
 		final MiniMaxState bestState = mMiniMaxHelper.minimax(initialState);
-
-		System.out.println("whole decision took "+(System.currentTimeMillis() - startMillis)+"ms");
-
-		System.out.println("bestState = " + bestState);
 
 		MoveDetails bestMoveDetails = bestState.getLastMove(currentPlayer);
 
-		System.out.println("bestMoveDetails = " + bestMoveDetails);
+		Logger.logInfo("bestMoveDetails = " + bestMoveDetails);
+		Logger.logTiming("whole decision took " + (System.currentTimeMillis() - startMillis) + "ms");
+		Logger.logInfo("bestState = " + bestState);
+		Logger.logInfo("current round = " + mViewController.getRound());
 
 		if(currentPlayer == Constants.MR_X_COLOUR){
-			if(bestMoveDetails.isDouble()){
-				mrXMovesPlayed.add(bestMoveDetails.getTicket1());
-				mrXMovesPlayed.add(bestMoveDetails.getTicket2());
-			} else {
-				mrXMovesPlayed.add(bestMoveDetails.getTicket1());
-			}
+			//track MrX's moves
+			updateMrxMoves(bestMoveDetails);
 		}
-		System.out.println("mrXMovesPlayed = " + mrXMovesPlayed);
-		System.out.println("mViewController.getRound = " + mViewController.getRound());
+
+		Logger.logVerbose("mrXMovesPlayed = " + mrXMovesPlayed);
 		return bestMoveDetails.getMove();
 	}
 
+	private MiniMaxState buildInitialState(final Colour currentPlayer, int realPlayerLocation) {
+
+		//build all the essential lists and maps for the MiniMaxState
+		HashMap<Colour, Integer> playerPositions = new HashMap<Colour, Integer>();
+		HashMap<Colour, HashMap<Ticket, Integer>> playerTicketNumbers = new HashMap<Colour, HashMap<Ticket, Integer>>();
+		for (Colour thisPlayer : mViewController.getPlayers()) {
+
+			if(currentPlayer == Constants.MR_X_COLOUR && thisPlayer == Constants.MR_X_COLOUR){
+				playerPositions.put(thisPlayer, realPlayerLocation);
+			}else {
+				playerPositions.put(thisPlayer, mViewController.getPlayerLocation(thisPlayer));
+			}
+
+			HashMap<Ticket, Integer> currentTicketNumbers = new HashMap<Ticket, Integer>();
+			for (Ticket currentTicket : Ticket.values()) {
+				currentTicketNumbers.put(currentTicket, mViewController.getPlayerTickets(thisPlayer, currentTicket));
+			}
+			playerTicketNumbers.put(thisPlayer, currentTicketNumbers);
+		}
+
+		return new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer, mViewController.getRounds(), mViewController.getRound(), new LinkedList<>(mrXMovesPlayed));
+	}
+
+	private void updateMrxMoves(final MoveDetails bestMoveDetails) {
+		if(bestMoveDetails.isDouble()){
+			mrXMovesPlayed.add(bestMoveDetails.getTicket1());
+			mrXMovesPlayed.add(bestMoveDetails.getTicket2());
+		} else {
+			mrXMovesPlayed.add(bestMoveDetails.getTicket1());
+		}
+	}
 }

@@ -1,8 +1,5 @@
-package MachineLearning;
+package helpers;
 
-/**
- * Created by rory on 28/04/15.
- */
 public class StaticConstants {
 	public static double MEAN_DIST_WEIGHT = 1;
 	public static double MOVE_WEIGHT = 1;
@@ -11,6 +8,10 @@ public class StaticConstants {
 	public static double INVISIBLE_ROUND_WEIGHT = 1;
 	public static double SD_DIST_WEIGHT = 1;
 	public static double BOAT_WEIGHT = 1;
-	public static boolean PLAY_GAME_NORMALLY = true;
+	public static boolean PLAY_GAME_WITHOUT_SCORING = true;
+	public static final boolean DEBUG_THREADS = false;
+	public static final boolean DEBUG_TIMINGS = false;
+	public static final boolean DEBUG_INFO = true;
+	public static final boolean DEBUG_VERBOSE = false;
 
 }

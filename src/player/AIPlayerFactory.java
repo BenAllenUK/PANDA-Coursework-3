@@ -1,6 +1,6 @@
 package player;
 
-import MachineLearning.StaticConstants;
+import helpers.StaticConstants;
 import gui.Gui;
 import net.PlayerFactory;
 import scotlandyard.Colour;
@@ -73,7 +73,7 @@ public class AIPlayerFactory implements PlayerFactory {
     @Override
     public List<Spectator> getSpectators(ScotlandYardView view) {
         List<Spectator> specs = new ArrayList<Spectator>();
-		if(StaticConstants.PLAY_GAME_NORMALLY) {
+		if(StaticConstants.PLAY_GAME_WITHOUT_SCORING) {
 			specs.add(gui(view));
 		}
         return specs;

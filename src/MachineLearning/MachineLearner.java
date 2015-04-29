@@ -4,21 +4,31 @@ import java.io.File;
 import java.util.ArrayList;
 
 /**
- * Created by rory on 27/04/15.
+ * Runs multiple instances of games synchronously through multiple generations to determine the best score weighting
  */
 public class MachineLearner {
 	private static final int GENE_TESTS = 3;
+	private final String NEW_LINE = System.getProperty("line.separator");
 	private GenePool mGenePool;
-	private String newLine = System.getProperty("line.separator");
-	private GameInstance currentGameInstance;
 
 	public MachineLearner(final int poolNumber) {
 
+		ensureGenePoolDir();
 
 		//load in current gene source
 		loadGene(poolNumber);
 
 		startTesting();
+	}
+
+	private void ensureGenePoolDir() {
+		File dir = new File("genePools");
+
+		if(!dir.exists()){
+			if(!dir.mkdir()){
+				System.err.println("Could not make genepool dir");
+			}
+		}
 	}
 
 	private void loadGene(final int poolNumber) {
@@ -50,6 +60,9 @@ public class MachineLearner {
 		}
 	}
 
+	/**
+	 * Tests the loaded {@link GenePool}'s genes, forever
+	 */
 	private void startTesting() {
 
 		while(true) {
@@ -58,9 +71,9 @@ public class MachineLearner {
 			for (Gene gene : mGenePool.getGenes()) {
 				while (gene.getTestCount() < GENE_TESTS) {
 
-					System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);
+					System.out.println(NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE);
 					System.out.println("testing round " + gene.getTestCount() + " " + gene);
-					System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);
+					System.out.println(NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE);
 
 					final GameResult result = playGame(gene);
 					if (result == null || result.isError()) {
@@ -92,10 +105,10 @@ public class MachineLearner {
 
 			}
 
-			System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);
+			System.out.println(NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE);
 			System.out.println("finished testing generation " + mGenePool.getGeneration());
 			System.out.println("bestGene = " + orderedGeneList.get(orderedGeneList.size() - 1));
-			System.out.println(newLine + newLine + newLine + newLine + newLine + newLine);
+			System.out.println(NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE);
 
 			mGenePool.regenerateFrom(orderedGeneList);
 
@@ -105,8 +118,7 @@ public class MachineLearner {
 
 	private GameResult playGame(final Gene gene) {
 
-		currentGameInstance = new GameInstance(gene);
-		final GameResult gameResult = currentGameInstance.start();
-		return gameResult;
+		final GameInstance currentGameInstance = new GameInstance(gene);
+		return currentGameInstance.start();
 	}
 }
