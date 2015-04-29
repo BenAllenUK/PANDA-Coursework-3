@@ -7,7 +7,7 @@ import java.util.ArrayList;
  * Runs multiple instances of games synchronously through multiple generations to determine the best score weighting
  */
 public class MachineLearner {
-	private static final int GENE_TESTS = 3;
+	private static final int GENE_TESTS = 5;
 	private final String NEW_LINE = System.getProperty("line.separator");
 	private GenePool mGenePool;
 
