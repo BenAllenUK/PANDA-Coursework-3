@@ -48,7 +48,7 @@ public class ScorerHelper {
 		if (isMrXPerspective && !StaticConstants.PLAY_GAME_WITHOUT_SCORING) {
 			return scoreForMrXUsingWeights(state, validator, viewController);
 		} else if(isMrXPerspective) {
-			return scoreForMrX(state, viewController);
+			return scoreForMrX(state);
 		} else {
 			return scoreForDetective(state, validator);
 		}
@@ -56,6 +56,7 @@ public class ScorerHelper {
 
 	private int scoreForDetective(final MiniMaxState state, final ValidMoves validator) {
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
+		System.out.println("Scoring Detective on + " +state.getRootPlayerColour().toString());
 
 		List<Boolean> rounds = state.getRounds();
 		Integer roundNumber = state.getRoundNumber();
@@ -68,9 +69,8 @@ public class ScorerHelper {
 			for (Ticket ticket : ticketsPlayed) {
 				ticketsUsed.put(ticket, 1);
 			}
-			System.out.println("ticketsUsed = " + ticketsUsed);
-			Set<Move> movesMrXPossibles = validator.validMoves(mrXPos, ticketsUsed, Constants.MR_X_COLOUR, state.getPositions());
-			System.out.println("movesMrXPossibles = " + movesMrXPossibles);
+
+			Set<Move> movesMrXPossibles = validator.validMoves(mrXPos, ticketsUsed, state.getCurrentPlayer(), state.getPositions());
 			int smallestDistance = Integer.MAX_VALUE;
 
 			for (Move move : movesMrXPossibles) {
@@ -91,47 +91,11 @@ public class ScorerHelper {
 
 
 	}
-	private int scoreForMrX(final MiniMaxState state, ScotlandYardView viewController) {
-		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
+	private int scoreForMrX(final MiniMaxState state) {
+		int oppPosition = state.getPositions().get(state.getCurrentPlayer());
+		int mrXPos = state.getPositions().get(state.getRootPlayerColour());
 
-		//this is Mr X's standard 'minimum distance from detective' mode
-		int nearestDistance = Integer.MAX_VALUE;
-
-		// Otherwise calculate the average from mrX and all the other players
-		for (Colour player : viewController.getPlayers()) {
-
-			// Avoid checking MrX's distance to himself
-			if (player != Constants.MR_X_COLOUR) {
-
-				// Get their location
-				int playerLocation = state.getPositions().get(player);
-
-				// Get a list of their nodes
-				Set<DataPosition> distanceBetween = mShortestPathHelper.shortestPath(mrXPos, playerLocation);
-
-				int distanceBetweenNodes;
-
-				// If there is no distance then the game is over
-				if (distanceBetween == null) {
-					distanceBetweenNodes = 0;
-				} else {
-					distanceBetweenNodes = distanceBetween.size() - 1;
-				}
-
-				if(distanceBetweenNodes < nearestDistance){
-					nearestDistance = distanceBetweenNodes;
-				}
-
-			}
-		}
-
-		return nearestDistance;
-
-
-	}
-
-	private int detectiveSmallestDistance(MiniMaxState state, int targetPos) {
-		final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(targetPos, state.getPositions().get(state.getRootPlayerColour()));
+		final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(oppPosition, mrXPos);
 
 		final int distComponent;
 
@@ -140,6 +104,60 @@ public class ScorerHelper {
 		} else {
 			distComponent = Integer.MAX_VALUE;
 		}
+		return distComponent;
+
+
+	}
+
+<<<<<<< HEAD
+	private int detectiveSmallestDistance(MiniMaxState state, int targetPos) {
+		final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(targetPos, state.getPositions().get(state.getRootPlayerColour()));
+=======
+		} else if(state.getRootPlayerColour() == Constants.MR_X_COLOUR){
+
+			//this is Mr X's standard 'minimum distance from detective' mode
+			int nearestDistance = Integer.MAX_VALUE;
+
+			// Otherwise calculate the average from mrX and all the other players
+			for (Colour player : viewController.getPlayers()) {
+
+				// Avoid checking MrX's distance to himself
+				if (player != Constants.MR_X_COLOUR) {
+
+					// Get their location
+					int playerLocation = state.getPositions().get(player);
+
+					// Get a list of their nodes
+					Set<DataPosition> distanceBetween = mShortestPathHelper.shortestPath(mrXPos, playerLocation);
+
+					int distanceBetweenNodes;
+
+					// If there is no distance then the game is over
+					if (distanceBetween == null) {
+						distanceBetweenNodes = 0;
+					} else {
+						distanceBetweenNodes = distanceBetween.size() - 1;
+					}
+
+					if(distanceBetweenNodes < nearestDistance){
+						nearestDistance = distanceBetweenNodes;
+					}
+
+				}
+			}
+
+			return nearestDistance;
+
+		} else {
+>>>>>>> 3055fc48024413b0f8ce1fc453b7128f171756fe
+
+		final int distComponent;
+
+		if (dataPositions != null) {
+            distComponent = (dataPositions.size() - 1);
+        } else {
+            distComponent = Integer.MAX_VALUE;
+        }
 		return distComponent;
 	}
 
@@ -155,37 +173,37 @@ public class ScorerHelper {
 
 		for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
-			if (position.getKey() != Constants.MR_X_COLOUR) {
-				final Integer pos = position.getValue();
-				final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
-				if (dataPositions != null) {
-					final float distance = (dataPositions.size() - 1);
-					distancesMap.put(pos, distance);
-					mean += distance / divider;
-				}
-			}
-		}
+            if (position.getKey() != Constants.MR_X_COLOUR) {
+                final Integer pos = position.getValue();
+                final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(mrXPos, pos);
+                if (dataPositions != null) {
+                    final float distance = (dataPositions.size() - 1);
+                    distancesMap.put(pos, distance);
+                    mean += distance / divider;
+                }
+            }
+        }
 
 		for (Map.Entry<Colour, Integer> position : state.getPositions().entrySet()) {
 
-			if (position.getKey() != Constants.MR_X_COLOUR) {
-				final Integer pos = position.getValue();
-				final Float dataPosition = distancesMap.get(pos);
-				if (dataPosition != null) {
-					final float distance = dataPosition;
-					sd += ((mean-distance)*(mean-distance)) / divider;
-				}
-			}
-		}
+            if (position.getKey() != Constants.MR_X_COLOUR) {
+                final Integer pos = position.getValue();
+                final Float dataPosition = distancesMap.get(pos);
+                if (dataPosition != null) {
+                    final float distance = dataPosition;
+                    sd += ((mean-distance)*(mean-distance)) / divider;
+                }
+            }
+        }
 
 		sd = Math.sqrt(sd);
 
 		final Set<Move> moves = validMoves.validMoves(
-				state.getPositions().get(state.getCurrentPlayer()),
-				state.getTicketsForCurrentPlayer(),
-				state.getCurrentPlayer(),
-				state.getPositions()
-		);
+                state.getPositions().get(state.getCurrentPlayer()),
+                state.getTicketsForCurrentPlayer(),
+                state.getCurrentPlayer(),
+                state.getPositions()
+        );
 		final int outBoundMoveCount = moves.size();
 
 		final double roundComponent = getRoundComponent(state, viewController, 0);
