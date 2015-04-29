@@ -70,16 +70,16 @@ public class ThreadWaiter<T> {
 							resultFuture = completionService.take();
 							final T result = resultFuture.get();
 
+							synchronized (mResults) {
+
 							if (received == threadCount) {
 								System.err.println("Received all " + threadCount + " responses");
-								synchronized (mThreadState) {
 									mThreadState = ThreadState.IDLE;
-								}
 							} else {
 								System.err.println("Received " + received + " of " + threadCount + " responses");
 							}
 
-							synchronized (mResults) {
+
 								mResults.add(result);
 								mResults.notifyAll();
 							}
@@ -109,9 +109,7 @@ public class ThreadWaiter<T> {
 		synchronized (mResults) {
 			if (mResults.size() > 0) {
 				return mResults.pop();
-			} else if (mResults.size() == 0) {
-				synchronized (mThreadState) {
-					if (mThreadState == ThreadState.STARTED) {
+			} else if (mResults.size() == 0 && mThreadState == ThreadState.STARTED) {
 						System.out.println("beginning wait");
 						try {
 							mResults.wait();
@@ -124,8 +122,6 @@ public class ThreadWaiter<T> {
 						} else {
 							return null;
 						}
-					}
-				}
 			}
 		}
 		return null;
