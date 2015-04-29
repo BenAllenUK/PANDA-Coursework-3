@@ -106,8 +106,8 @@ public class ThreadManager<T> {
 	}
 
 	public T getNext() {
-		System.out.println(getThreadId()+"# mThreadState = " + mThreadState);
-		if (mThreadState == ThreadState.IDLE) {
+		System.out.println(getThreadId()+"# mThreadState = " + mThreadState+" (queue size: "+queue.size()+")");
+		if (queue.isEmpty() && mThreadState == ThreadState.IDLE) {
 
 			return null;
 		}
@@ -115,13 +115,13 @@ public class ThreadManager<T> {
 		lock.lock();
 		try {
 
-			Logger.logThread(getThreadId()+"# beginning wait");
+			Logger.logThread(getThreadId()+"# beginning wait (queue size: "+queue.size()+")");
 
 			while (queue.isEmpty()) {
 				notEmpty.await();
 			}
 
-			Logger.logThread(getThreadId()+"# stopping wait");
+			Logger.logThread(getThreadId()+"# stopping wait (queue size: "+queue.size()+")");
 
 			return queue.remove();
 		} catch (InterruptedException e) {
