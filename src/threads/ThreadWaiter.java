@@ -17,7 +17,7 @@ public class ThreadWaiter<T> {
 	enum ThreadState {IDLE, STARTED}
 	private final ExecutorService mThreadPool;
 	private ThreadState mThreadState = ThreadState.IDLE;
-	private Deque<T> mResults = new ArrayDeque<T>();
+	private final Deque<T> mResults = new ArrayDeque<T>();
 
 	public ThreadWaiter(ExecutorService threadPool) {
 		mThreadPool = threadPool;
@@ -70,9 +70,13 @@ public class ThreadWaiter<T> {
 							resultFuture = completionService.take();
 							final T result = resultFuture.get();
 
-							if(received == threadCount){
+							if (received == threadCount) {
 								System.err.println("Received all " + threadCount + " responses");
-								mThreadState = ThreadState.IDLE;
+								synchronized (mThreadState) {
+									mThreadState = ThreadState.IDLE;
+								}
+							} else {
+								System.err.println("Received " + received + " of " + threadCount + " responses");
 							}
 
 							synchronized (mResults) {
@@ -90,8 +94,6 @@ public class ThreadWaiter<T> {
 //				if(LOG_THREADS) System.out.println("Not all threads completed yet (level: "+state.getCurrentDepth()+" received:"+received+"/"+threadCount+")");
 						}
 					}
-
-
 				}
 			});
 			completionThread.start();
@@ -107,16 +109,22 @@ public class ThreadWaiter<T> {
 		synchronized (mResults) {
 			if (mResults.size() > 0) {
 				return mResults.pop();
-			} else if (mResults.size() == 0 && mThreadState == ThreadState.STARTED) {
-				try {
-					mResults.wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				if (mResults.size() > 0) {
-					return mResults.pop();
-				} else {
-					return null;
+			} else if (mResults.size() == 0) {
+				synchronized (mThreadState) {
+					if (mThreadState == ThreadState.STARTED) {
+						System.out.println("beginning wait");
+						try {
+							mResults.wait();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+						System.out.println("ending wait");
+						if (mResults.size() > 0) {
+							return mResults.pop();
+						} else {
+							return null;
+						}
+					}
 				}
 			}
 		}

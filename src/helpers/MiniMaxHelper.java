@@ -58,19 +58,24 @@ public class MiniMaxHelper {
 	public MiniMaxState minimax(final MiniMaxState state) {
 		boolean atMaxDepth = state.getCurrentDepth() == state.getPositions().size() * MAX_DEPTH;
 
+//		System.out.println("minimaxing");
 		if (atMaxDepth || finishUp) {
 			//score where we are
+
+//			System.out.println("score start");
 
 			if(!atMaxDepth){
 //				System.err.println("Prematurely exiting");
 			}
 			state.setCurrentScore(mScorer.score(state, mValidator, mViewController));
 			scoreCount++;
-//			System.out.println("score " + scoreCount + " complete");
+			System.out.println("score " + scoreCount + " complete");
 
+//			System.out.println("score finish");
 			return state;
 		} else {
 
+//			System.out.println("recursing");
 			final List<Move> moves = new ArrayList<Move>(mValidator.validMoves(
 					state.getPositions().get(state.getCurrentPlayer()),
 					state.getTicketsForCurrentPlayer(),
@@ -132,6 +137,7 @@ public class MiniMaxHelper {
 						@Override
 						public MiniMaxState call() throws Exception {
 
+//							System.out.println("threading");
 							MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
 
 							final MiniMaxState nextPlayersBestState = minimax(newState);
@@ -147,7 +153,7 @@ public class MiniMaxHelper {
 
 				while(!threadWaiter.isFinished()){
 
-
+//					System.out.println("spinning");
 
 					final MiniMaxState nextPlayersBestState = threadWaiter.getNext();
 
@@ -185,6 +191,8 @@ public class MiniMaxHelper {
 
 				for (final MoveDetails moveDetails : moveSubList) {
 
+					System.out.println("foring");
+
 					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
 
 					final MiniMaxState nextPlayersBestState = minimax(newState);
@@ -193,6 +201,8 @@ public class MiniMaxHelper {
 					nextPlayersBestState.setCurrentPlayer(state.getCurrentPlayer());
 
 					if (nextPlayersBestState != null) {
+
+						System.out.println("state not null");
 
 						if (bestState == null) {
 							bestState = nextPlayersBestState;
@@ -209,13 +219,16 @@ public class MiniMaxHelper {
 						}
 
 						if (state.beta <= state.alpha) {
+							System.out.println("breaking");
 							break;
 						}
 					}
 				}
+				System.out.println("Done foring");
 //				}
 			}
 
+			System.out.println("done calc");
 			return bestState;
 		}
 	}
