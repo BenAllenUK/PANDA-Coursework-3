@@ -10,6 +10,7 @@ public class Logger {
 	public static final boolean DEBUG_TIMINGS = true;
 	public static final boolean DEBUG_INFO = true;
 	public static final boolean DEBUG_VERBOSE = false;
+	public static final boolean DEBUG_DETECTIVES = true;
 	
 	public static void logTiming(final String text){
 		if(DEBUG_TIMINGS){
@@ -30,7 +31,7 @@ public class Logger {
 	}
 
 	public static void logDetectives(final String text) {
-		if(StaticConstants.DEBUG_DETECTIVES){
+		if(DEBUG_DETECTIVES){
 			System.out.println(text);
 		}
 	}

@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -31,7 +30,6 @@ import java.util.Set;
 public class MyAIPlayer implements Player {
 	private final ScotlandYardView mViewController;
 	private final ScorerHelper mScorer;
-	private final List<Ticket> mrXMovesPlayed;
 	private Graph<Integer, Route> mGraph;
 
 	public MyAIPlayer(ScotlandYardView view, String graphFilename) {
@@ -49,7 +47,6 @@ public class MyAIPlayer implements Player {
 		mViewController = view;
 		final ScotlandYardMap gameMap = new ScotlandYardMap(mGraph);
 		mScorer = new ScorerHelper(gameMap);
-		mrXMovesPlayed = new LinkedList<>();
 	}
 
 	@Override
@@ -73,34 +70,44 @@ public class MyAIPlayer implements Player {
 
 
 		final MiniMaxHelper mMiniMaxHelper = new MiniMaxHelper(mViewController, mScorer, mGraph);
-
 		mMiniMaxHelper.begin();
 
 		Logger.logInfo(currentPlayer+" starting their minimax, currently @ "+location);
 
 		//begin the minimaxing
 		final MiniMaxState bestState = mMiniMaxHelper.minimax(initialState);
-
 		MoveDetails bestMoveDetails = bestState.getLastMove(currentPlayer);
 
+		// Log some information
 		Logger.logInfo("bestMoveDetails = " + bestMoveDetails);
 		Logger.logTiming("whole decision took " + (System.currentTimeMillis() - startMillis) + "ms");
 		Logger.logInfo("bestState = " + bestState);
 		Logger.logInfo("current round = " + mViewController.getRound());
 
+		// Update MrX tickets if the current perspective is MrX
 		if(currentPlayer == Constants.MR_X_COLOUR){
-			if(bestMoveDetails.isDouble()){
-				MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket1());
-				MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket2());
-			} else {
-				MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket1());
-			}
+			updateMrXTickets(bestMoveDetails);
 		}
 
 		Logger.logDetectives("mrXMovesPlayed = " + MrXTicketInfo.getTicketsUsed().toString());
 		return bestMoveDetails.getMove();
 	}
 
+	private void updateMrXTickets(MoveDetails bestMoveDetails) {
+		if(bestMoveDetails.isDouble()){
+            MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket1());
+            MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket2());
+        } else {
+            MrXTicketInfo.addTicketUsed(bestMoveDetails.getTicket1());
+        }
+	}
+
+	/**
+	 * Create the new minimax state which simulates the next turn in the game. It holds the game data required for further turns
+	 * @param currentPlayer the current player
+	 * @param realPlayerLocation the location given through the notify call
+	 * @return a new mini max state which we can apply a move too
+	 */
 	private MiniMaxState buildInitialState(final Colour currentPlayer, int realPlayerLocation) {
 
 		//build all the essential lists and maps for the MiniMaxState
@@ -108,12 +115,14 @@ public class MyAIPlayer implements Player {
 		HashMap<Colour, HashMap<Ticket, Integer>> playerTicketNumbers = new HashMap<>();
 		for (Colour thisPlayer : mViewController.getPlayers()) {
 
+			// If it is mr x then use his real location, otherwise use the last known location
 			if(currentPlayer == Constants.MR_X_COLOUR && thisPlayer == Constants.MR_X_COLOUR){
 				playerPositions.put(thisPlayer, realPlayerLocation);
 			}else {
 				playerPositions.put(thisPlayer, mViewController.getPlayerLocation(thisPlayer));
 			}
 
+			// Create a hash map containing the tickets and their numbers for each of the players
 			HashMap<Ticket, Integer> currentTicketNumbers = new HashMap<>();
 			for (Ticket currentTicket : Ticket.values()) {
 				currentTicketNumbers.put(currentTicket, mViewController.getPlayerTickets(thisPlayer, currentTicket));

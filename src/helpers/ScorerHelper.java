@@ -16,9 +16,10 @@ public class ScorerHelper {
 	private final ShortestPathHelper mShortestPathHelper;
 	private final ScotlandYardMap mGameMap;
 	private DataSave mGraphData;
-	private final DataParser mDataParser;
+
 
 	public ScorerHelper(ScotlandYardMap gameMap) {
+		final DataParser mDataParser;
 		mDataParser = new DataParser();
 
 		try {
@@ -53,6 +54,11 @@ public class ScorerHelper {
 		}
 	}
 
+	/**
+	 * Score a state from a detectives perspective
+	 * @param state the state to score
+	 * @return the minimum distance to the target node
+	 */
 	private int scoreForDetective(final MiniMaxState state) {
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
@@ -61,19 +67,25 @@ public class ScorerHelper {
 		List<Ticket> mrXTicketsUsed = state.getMrXTickets();
 
 		boolean isMrXHidden = isMrXHidden(rounds, roundNumber);
-		if(isMrXHidden){
-			List<Ticket> ticketsPlayed = getTicketsPlayedMrX(mrXTicketsUsed);
 
+		// If we don't know where mrx is then use his tickets to work out his possible moves
+		if(isMrXHidden){
+			Ticket lastTicketUsed = mrXTicketsUsed.get(mrXTicketsUsed.size() - 1);
+
+			// Get known routes from his last seen location
 			Set<Edge<Integer, Route>> routesFromLastKnown = mGameMap.getRoutesFrom(state.getPositions().get(Constants.MR_X_COLOUR));
+
 			Set<Integer> possibleDestinations = new HashSet<>();
+
+			// Only check the routes that he actually carried out
 			for (Edge<Integer, Route> routeEdge : routesFromLastKnown) {
-				Ticket firstTicket = ticketsPlayed.get(0);
-				if(firstTicket == Ticket.fromRoute(routeEdge.data()) || firstTicket == Ticket.Secret){
+				if(lastTicketUsed == Ticket.fromRoute(routeEdge.data()) || lastTicketUsed == Ticket.Secret){
 					possibleDestinations.add(routeEdge.target());
 				}
 			}
 			int smallestDistance = Integer.MAX_VALUE;
 
+			// Run through each location and get the best score (min distance)
 			for (Integer destination : possibleDestinations) {
 				int endTarget = destination;
 
@@ -84,7 +96,6 @@ public class ScorerHelper {
 					smallestDistance = thisDistance;
 				}
 			}
-			Logger.logVerbose("smallestDistance = " + smallestDistance);
 			return smallestDistance;
 		} else {
 			return detectiveSmallestDistance(state, mrXPos);
@@ -92,6 +103,13 @@ public class ScorerHelper {
 
 
 	}
+
+	/**
+	 * Score mr x by calculating the minimum distance to the nearest detective
+	 * @param state the state to score
+	 * @param viewController the sy view controller
+	 * @return the distance to the nearest player
+	 */
 	private int scoreForMrX(final MiniMaxState state, ScotlandYardView viewController) {
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
@@ -127,6 +145,12 @@ public class ScorerHelper {
 
 	}
 
+	/**
+	 * Get the distance based on MrX's current location
+	 * @param state the state to score
+	 * @param targetPos the target position
+	 * @return the distance to mrx
+	 */
 	private int detectiveSmallestDistance(MiniMaxState state, int targetPos) {
 		final Set<DataPosition> dataPositions = mShortestPathHelper.shortestPath(targetPos, state.getPositions().get(state.getRootPlayerColour()));
 
@@ -137,7 +161,14 @@ public class ScorerHelper {
 		return distComponent;
 	}
 
-	private int scoreForMrXUsingWeights(final MiniMaxState state, final ValidMoves validMoves, final ScotlandYardView viewController) {
+	/**
+	 * Uses the score weights to decide the next move for Mr X
+	 * @param state the previous state
+	 * @param validator the validator to access valid moves
+	 * @param viewController the Scotland yard VC
+	 * @return the desired score
+	 */
+	private int scoreForMrXUsingWeights(final MiniMaxState state, final ValidMoves validator, final ScotlandYardView viewController) {
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
 		final float divider = state.getPositions().size() - 1;
@@ -172,7 +203,7 @@ public class ScorerHelper {
 
 		sd = Math.sqrt(sd);
 
-		final Set<Move> moves = validMoves.validMoves(
+		final Set<Move> moves = validator.validMoves(
 				state.getPositions().get(state.getCurrentPlayer()),
 				state.getTicketsForCurrentPlayer(),
 				state.getCurrentPlayer(),
@@ -258,16 +289,13 @@ public class ScorerHelper {
 
 	}
 
-	private List<Ticket> getTicketsPlayedMrX(List<Ticket> ticketsPlayed) {
-		List<Ticket> ticketsUsedSinceVisible = new LinkedList<>();
-		ticketsUsedSinceVisible.add(ticketsPlayed.get(ticketsPlayed.size() - 1));
-		return ticketsUsedSinceVisible;
-	}
+	/**
+	 * Return true if Mr X is hidden false if not
+	 * @param rounds the rounds
+	 * @param thisRoundNumber the current round number
+	 * @return whether mr x is hidden or not
+	 */
 	public boolean isMrXHidden(List<Boolean> rounds, Integer thisRoundNumber) {
-		if(rounds.get(thisRoundNumber)){
-			return false;
-		} else {
-			return true;
-		}
+		return !rounds.get(thisRoundNumber);
 	}
 }

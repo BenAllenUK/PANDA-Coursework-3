@@ -59,7 +59,7 @@ public class MiniMaxState {
 		}
 		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer, rounds, newRoundNumber, new LinkedList<>(mrXTickets));
 
-		final HashMap<Colour, MoveDetails> lastMovesClone = new HashMap<Colour, MoveDetails>();
+		final HashMap<Colour, MoveDetails> lastMovesClone = new HashMap<>();
 
 		for(HashMap.Entry<Colour, MoveDetails> entry : lastMoves.entrySet()){
 			lastMovesClone.put(entry.getKey(), entry.getValue().clone());
@@ -109,7 +109,6 @@ public class MiniMaxState {
 
 			out.put(colour, (HashMap<Ticket, Integer>) map.clone());
 
-//				it.remove(); // avoids a ConcurrentModificationException
 		}
 
 		final HashMap<Ticket, Integer> playerTickets = out.get(player);

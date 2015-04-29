@@ -1,5 +1,6 @@
 package player;
 
+import helpers.Constants;
 import helpers.StaticConstants;
 import gui.Gui;
 import net.PlayerFactory;
@@ -9,6 +10,7 @@ import scotlandyard.ScotlandYardView;
 import scotlandyard.Spectator;
 
 import java.io.IOException;
+import java.lang.invoke.ConstantCallSite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,7 +75,7 @@ public class AIPlayerFactory implements PlayerFactory {
     @Override
     public List<Spectator> getSpectators(ScotlandYardView view) {
         List<Spectator> specs = new ArrayList<Spectator>();
-		if(StaticConstants.PLAY_GAME_WITHOUT_SCORING) {
+		if(StaticConstants.PLAY_GAME_WITHOUT_SCORING && !Constants.USING_LEARNER) {
 			specs.add(gui(view));
 		}
         return specs;
