@@ -62,7 +62,7 @@ public class ScorerHelper {
 
 		boolean isMrXHidden = isMrXHidden(rounds, roundNumber);
 		if(isMrXHidden){
-			List<Ticket> ticketsPlayed = getTicketsPlayedMrX(rounds, roundNumber, mrXTicketsUsed);
+			List<Ticket> ticketsPlayed = getTicketsPlayedMrX(mrXTicketsUsed);
 
 			Set<Edge<Integer, Route>> routesFromLastKnown = mGameMap.getRoutesFrom(state.getPositions().get(Constants.MR_X_COLOUR));
 			Set<Integer> possibleDestinations = new HashSet<>();
@@ -266,7 +266,7 @@ public class ScorerHelper {
 
 	}
 
-	private List<Ticket> getTicketsPlayedMrX(List<Boolean> rounds, Integer roundNumber, List<Ticket> ticketsPlayed) {
+	private List<Ticket> getTicketsPlayedMrX(List<Ticket> ticketsPlayed) {
 		List<Ticket> ticketsUsedSinceVisible = new LinkedList<>();
 		ticketsUsedSinceVisible.add(ticketsPlayed.get(ticketsPlayed.size() - 1));
 		return ticketsUsedSinceVisible;
