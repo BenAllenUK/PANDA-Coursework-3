@@ -84,8 +84,7 @@ public class ScorerHelper {
 					smallestDistance = thisDistance;
 				}
 			}
-			System.out.println("smallestDistance = " + smallestDistance);
-			return detectiveSmallestDistance(state, mrXPos);
+			return smallestDistance;
 		} else {
 			return detectiveSmallestDistance(state, mrXPos);
 		}
@@ -268,14 +267,8 @@ public class ScorerHelper {
 	}
 
 	private List<Ticket> getTicketsPlayedMrX(List<Boolean> rounds, Integer roundNumber, List<Ticket> ticketsPlayed) {
-		int backwardsCounter = roundNumber;
 		List<Ticket> ticketsUsedSinceVisible = new LinkedList<>();
-		while(!rounds.get(backwardsCounter)){
-			Ticket ticket = ticketsPlayed.get(backwardsCounter);
-			ticketsUsedSinceVisible.add(ticket);
-			backwardsCounter--;
-		}
-
+		ticketsUsedSinceVisible.add(ticketsPlayed.get(ticketsPlayed.size() - 1));
 		return ticketsUsedSinceVisible;
 	}
 	public boolean isMrXHidden(List<Boolean> rounds, Integer thisRoundNumber) {
