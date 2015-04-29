@@ -92,8 +92,9 @@ public class ThreadManager<T> {
 	}
 
 	public T getNext() {
-
+		System.out.println("mThreadState = " + mThreadState);
 		if (mThreadState == ThreadState.IDLE) {
+
 			return null;
 		}
 

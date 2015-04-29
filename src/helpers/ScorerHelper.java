@@ -65,7 +65,6 @@ public class ScorerHelper {
 			List<Ticket> ticketsPlayed = getTicketsPlayedMrX(rounds, roundNumber, mrXTicketsUsed);
 
 			Set<Edge<Integer, Route>> routesFromLastKnown = mGameMap.getRoutesFrom(state.getPositions().get(Constants.MR_X_COLOUR));
-			System.out.println("routesFromLastKnown = " + routesFromLastKnown);
 			Set<Integer> possibleDestinations = new HashSet<>();
 			for (Edge<Integer, Route> routeEdge : routesFromLastKnown) {
 				Ticket firstTicket = ticketsPlayed.get(0);
@@ -86,7 +85,7 @@ public class ScorerHelper {
 				}
 			}
 			System.out.println("smallestDistance = " + smallestDistance);
-			return smallestDistance;
+			return detectiveSmallestDistance(state, mrXPos);
 		} else {
 			return detectiveSmallestDistance(state, mrXPos);
 		}
