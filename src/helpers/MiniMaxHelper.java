@@ -129,8 +129,11 @@ public class MiniMaxHelper {
 
 				}
 
+				Logger.logInfo("threadmanager "+threadManager.getThreadId()+" maps to "+state.getRootPlayerColour());
+
 				//start threading
 				threadManager.thread(callables);
+
 
 				//wait for the responses to come back, we'll block until then
 				while(!threadManager.isFinished()){
@@ -152,10 +155,6 @@ public class MiniMaxHelper {
 							}
 						}
 
-					}
-
-					if(threadManager.isFinished()){
-						break;
 					}
 
 				}

@@ -1,10 +1,12 @@
 package threads;
 
 import helpers.Logger;
+import models.MiniMaxState;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -18,6 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by rory on 25/04/15.
  */
 public class ThreadManager<T> {
+	private final int threadId;
 	enum ThreadState {IDLE, STARTED}
 	private final ExecutorService mThreadPool;
 	private ThreadState mThreadState = ThreadState.IDLE;
@@ -27,12 +30,13 @@ public class ThreadManager<T> {
 
 	public ThreadManager(ExecutorService threadPool) {
 		mThreadPool = threadPool;
+		threadId = new Random().nextInt(10000);
 	}
 
 	public void thread(final List<Callable<T>> callables) {
 
 		if (mThreadState == ThreadState.STARTED) {
-			System.err.println("Thread already started");
+			System.err.println(getThreadId()+"# Thread already started");
 			return;
 		} else {
 			mThreadState = ThreadState.STARTED;
@@ -52,7 +56,12 @@ public class ThreadManager<T> {
 
 					final long startMillis = System.currentTimeMillis();
 
+					System.out.println(getThreadId() + "# pre while received: " + received + " out of " + threadCount);
+
 					while (received < threadCount) {
+
+						System.out.println(getThreadId() + "# during while received: " + received + " out of " + threadCount);
+
 						Future<T> resultFuture = null; //blocks if none available
 						try {
 
@@ -61,10 +70,12 @@ public class ThreadManager<T> {
 							resultFuture = completionService.take();
 							final T result = resultFuture.get();
 
-							Logger.logTiming("Received " + received + " of " + threadCount + " responses in "+(System.currentTimeMillis() - startMillis)+"ms");
+							System.out.println(getThreadId() + "# " + received+" thread score: " + ((MiniMaxState) result).getCurrentScore());
+
+							Logger.logTiming(getThreadId() + "# Received " + received + " of " + threadCount + " responses in " + (System.currentTimeMillis() - startMillis)+"ms");
 
 							if (received == threadCount) {
-								Logger.logTiming("Received all " + threadCount + " responses");
+								Logger.logTiming(getThreadId()+"# Received all " + threadCount + " responses");
 								mThreadState = ThreadState.IDLE;
 							}
 
@@ -76,11 +87,14 @@ public class ThreadManager<T> {
 							} finally {
 								lock.unlock();
 							}
-						} catch (Exception ignored) {
+						} catch (Exception e) {
+							System.out.println(getThreadId() + "# exception while received: " + received + " out of " + threadCount);
+							e.printStackTrace();
+							System.exit(-1);
 						}
 					}
 
-					Logger.logTiming("Took " + (System.currentTimeMillis() - startMillis) + "ms to complete threads");
+					Logger.logTiming(getThreadId()+"# Took " + (System.currentTimeMillis() - startMillis) + "ms to complete "+threadCount+" threads");
 
 				}
 			}).start();
@@ -92,7 +106,7 @@ public class ThreadManager<T> {
 	}
 
 	public T getNext() {
-		System.out.println("mThreadState = " + mThreadState);
+		System.out.println(getThreadId()+"# mThreadState = " + mThreadState);
 		if (mThreadState == ThreadState.IDLE) {
 
 			return null;
@@ -101,20 +115,23 @@ public class ThreadManager<T> {
 		lock.lock();
 		try {
 
-			Logger.logThread("beginning wait");
+			Logger.logThread(getThreadId()+"# beginning wait");
 
 			while (queue.isEmpty()) {
 				notEmpty.await();
 			}
 
-			Logger.logThread("stopping wait");
+			Logger.logThread(getThreadId()+"# stopping wait");
 
-			T item = queue.remove();
-			return item;
+			return queue.remove();
 		} catch (InterruptedException e) {
 			return null;
 		} finally {
 			lock.unlock();
 		}
+	}
+
+	public int getThreadId() {
+		return threadId;
 	}
 }

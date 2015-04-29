@@ -84,6 +84,7 @@ public class ScorerHelper {
 					smallestDistance = thisDistance;
 				}
 			}
+			Logger.logVerbose("smallestDistance = " + smallestDistance);
 			return smallestDistance;
 		} else {
 			return detectiveSmallestDistance(state, mrXPos);
