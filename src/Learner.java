@@ -1,10 +1,10 @@
 import MachineLearning.MachineLearner;
-import MachineLearning.StaticConstants;
+import helpers.StaticConstants;
 
 import java.io.IOException;
 
 /**
- * Created by rory on 26/04/15.
+ * Entry to Machine Learning
  */
 public class Learner {
 	private static boolean judgeReady;
@@ -13,7 +13,7 @@ public class Learner {
 
 		String arg = "-1";
 
-		StaticConstants.PLAY_GAME_NORMALLY = false;
+		StaticConstants.PLAY_GAME_WITHOUT_SCORING = false;
 
 		if(args.length > 0) {
 			arg = args[0];

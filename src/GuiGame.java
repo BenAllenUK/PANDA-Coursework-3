@@ -18,18 +18,6 @@ import java.util.Map;
  */
 public class GuiGame {
     public static void main(String[] args) {
-//        List<Boolean> rounds = Arrays.asList(
-//                false,
-//                false, false,
-//                true,
-//                false, false, false, false,
-//                true,
-//                false, false, false, false,
-//                true,
-//                false, false, false, false,
-//                true,
-//                false, false, false, false, false,
-//                true);
         List<Boolean> rounds = Arrays.asList(
                 true,
                 true, true,

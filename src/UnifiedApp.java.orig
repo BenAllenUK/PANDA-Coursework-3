@@ -85,13 +85,16 @@ public class UnifiedApp {
 					err.printStackTrace();
 				}
 			}
+<<<<<<< HEAD
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+=======
 
 			//launch judge
+>>>>>>> 9f135d56d84d648f2be6a4f6b9c00ead8cd17840
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -109,7 +112,11 @@ public class UnifiedApp {
 				public void run() {
 					//wait an arbitrary duration for judge to connect
 						try {
+<<<<<<< HEAD
 							Thread.sleep(4000);
+=======
+							Thread.sleep(2000);
+>>>>>>> 9f135d56d84d648f2be6a4f6b9c00ead8cd17840
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}

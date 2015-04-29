@@ -226,4 +226,8 @@ public class MiniMaxState {
 		return roundNumber;
 	}
 
+	public List<Ticket> getMrXTickets() {
+		return mrXTickets;
+	}
+
 }

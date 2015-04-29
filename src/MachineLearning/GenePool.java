@@ -103,6 +103,7 @@ public class GenePool {
 
 	public void save() {
 
+		//saves to genePools
 		File file = new File("genePools/genePool"+generation);
 
 		try {
@@ -134,19 +135,33 @@ public class GenePool {
 		return geneList;
 	}
 
+	/**
+	 * Generates a new {@link GenePool} from a list of genes ordered from lowest score to highest.
+	 * It uses {@link GenePool#PARENT_POOL_SIZE} to generate the new pool
+	 *
+	 * @param orderedGenes a list of ordered genes from low score to high
+	 */
 	public void regenerateFrom(final ArrayList<Gene> orderedGenes) {
 		geneList.clear();
 
 		generation++;
 
+		//mean distance weight
 		double mdwMean = 0;
+		//move weight
 		double mwMean = 0;
+		//secret move weight
 		double smwMean = 0;
+		//visible move weight
 		double vrwMean = 0;
+		//invisible move weight
 		double irwMean = 0;
+		//distance standard deviation weight
 		double sdwMean = 0;
+		//boat distance weight
 		double bwMean = 0;
 
+		//respective standard deviations
 		double mdwSd = 0;
 		double mwSd = 0;
 		double smwSd = 0;
@@ -155,6 +170,7 @@ public class GenePool {
 		double sdwSd = 0;
 		double bwSd = 0;
 
+		//generate means
 		for (int i = orderedGenes.size() - PARENT_POOL_SIZE; i < orderedGenes.size(); i++) {
 			mdwMean += orderedGenes.get(i).getMEAN_DIST_WEIGHT() / (float) PARENT_POOL_SIZE;
 			mwMean += orderedGenes.get(i).getMOVE_WEIGHT() / (float) PARENT_POOL_SIZE;
@@ -165,6 +181,7 @@ public class GenePool {
 			bwMean += orderedGenes.get(i).getBOAT_WEIGHT() / (float) PARENT_POOL_SIZE;
 		}
 
+		//generate standard deviations
 		for (int i = orderedGenes.size() - PARENT_POOL_SIZE; i < orderedGenes.size(); i++) {
 			mdwSd += ((mdwMean - orderedGenes.get(i).getMEAN_DIST_WEIGHT()) * (mdwMean - orderedGenes.get(i).getMEAN_DIST_WEIGHT())) / (float) PARENT_POOL_SIZE;
 			mwSd += ((mwMean - orderedGenes.get(i).getMOVE_WEIGHT()) * (mwMean - orderedGenes.get(i).getMOVE_WEIGHT())) / (float) PARENT_POOL_SIZE;
@@ -175,6 +192,7 @@ public class GenePool {
 			bwSd += ((bwMean - orderedGenes.get(i).getBOAT_WEIGHT()) * (bwMean - orderedGenes.get(i).getBOAT_WEIGHT())) / (float) PARENT_POOL_SIZE;
 		}
 
+		//finalise standard deviations
 		mdwSd = Math.sqrt(mdwSd);
 		mdwSd = Math.sqrt(mdwSd);
 		mdwSd = Math.sqrt(mdwSd);
@@ -185,6 +203,7 @@ public class GenePool {
 		final float randFactor = 2f;
 		final float sdFactor = 2f;
 
+		//generate new genes, with some random variation
 		for (int i = 0; i < POOL_SIZE; i++) {
 
 			Gene newGene = new Gene();

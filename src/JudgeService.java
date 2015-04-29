@@ -41,22 +41,8 @@ public class JudgeService {
                 true,
                 false, false, false, false, false,
                 true);
-//        List<Boolean> rounds = Arrays.asList(
-//                true,
-//                true, true,
-//                true,
-//                true, true, true, true,
-//                true,
-//                true, true, true, true,
-//                true,
-//                true, true, true, true,
-//                true,
-//                true, true, true, true, true,
-//                true);
 
         JudgedScotlandYard game = new JudgedScotlandYard(5, rounds, "resources/graph.txt");
-
-		int[] xStartPosArray = new int[]{172, 170, 71, 104, 166, 51, 78, 35, 146, 127, 106, 45, 132};
 
         Map<Colour, Integer> locations = new HashMap<Colour, Integer>();
         locations.put(Colour.Red,    56);
