@@ -13,7 +13,7 @@ public class ValidMoves {
 
     public ValidMoves(Graph<Integer, Route> mGraph) {
 
-		connectedEdges = new HashMap<Integer, List<Edge<Integer, Route>>>();
+		connectedEdges = new HashMap<>();
 		for(Node<Integer> node : mGraph.getNodes()){
 			connectedEdges.put(node.data(), GraphHelper.getConnectedEdges(mGraph, node));
 		}
@@ -21,7 +21,7 @@ public class ValidMoves {
 
     public Set<MoveTicket> getAvailableSingleMoves(Colour playerColour, int location, Map<Ticket, Integer> tickets, HashMap<Colour, Integer> positions) {
 
-        Set<MoveTicket> moves = new HashSet<MoveTicket>();
+        Set<MoveTicket> moves = new HashSet<>();
 
 		final List<Edge<Integer, Route>> edges = connectedEdges.get(location);
 		try {

@@ -48,7 +48,7 @@ public class MyAIPlayer implements Player {
 		// Update globals
 		mViewController = view;
 		final ScotlandYardMap gameMap = new ScotlandYardMap(mGraph);
-		mScorer = new ScorerHelper();
+		mScorer = new ScorerHelper(gameMap);
 		mrXMovesPlayed = new LinkedList<>();
 	}
 

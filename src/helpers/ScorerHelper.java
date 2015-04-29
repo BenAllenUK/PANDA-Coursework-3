@@ -4,10 +4,8 @@ import models.DataPosition;
 import models.DataSave;
 import models.MiniMaxState;
 import models.MoveDetails;
-import scotlandyard.Colour;
-import scotlandyard.Move;
-import scotlandyard.ScotlandYardView;
-import scotlandyard.Ticket;
+import scotlandyard.*;
+import solution.ScotlandYardMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,10 +14,11 @@ import java.util.*;
 public class ScorerHelper {
 
 	private final ShortestPathHelper mShortestPathHelper;
+	private final ScotlandYardMap mGameMap;
 	private DataSave mGraphData;
 	private final DataParser mDataParser;
 
-	public ScorerHelper() {
+	public ScorerHelper(ScotlandYardMap gameMap) {
 		mDataParser = new DataParser();
 
 		try {
@@ -30,7 +29,7 @@ public class ScorerHelper {
 		}
 
 		mShortestPathHelper = new ShortestPathHelper(mGraphData.positionList, mGraphData.pathList);
-
+		mGameMap = gameMap;
 	}
 
 	/**
@@ -50,11 +49,11 @@ public class ScorerHelper {
 		} else if(isMrXPerspective) {
 			return scoreForMrX(state, viewController);
 		} else {
-			return scoreForDetective(state, validator);
+			return scoreForDetective(state);
 		}
 	}
 
-	private int scoreForDetective(final MiniMaxState state, final ValidMoves validator) {
+	private int scoreForDetective(final MiniMaxState state) {
 		int mrXPos = state.getPositions().get(Constants.MR_X_COLOUR);
 
 		List<Boolean> rounds = state.getRounds();
@@ -64,18 +63,20 @@ public class ScorerHelper {
 		boolean isMrXHidden = isMrXHidden(rounds, roundNumber);
 		if(isMrXHidden){
 			List<Ticket> ticketsPlayed = getTicketsPlayedMrX(rounds, roundNumber, mrXTicketsUsed);
-			HashMap<Ticket, Integer> ticketsUsed = new HashMap<>();
-			for (Ticket ticket : ticketsPlayed) {
-				ticketsUsed.put(ticket, 1);
+
+			Set<Edge<Integer, Route>> routesFromLastKnown = mGameMap.getRoutesFrom(state.getPositions().get(Constants.MR_X_COLOUR));
+			System.out.println("routesFromLastKnown = " + routesFromLastKnown);
+			Set<Integer> possibleDestinations = new HashSet<>();
+			for (Edge<Integer, Route> routeEdge : routesFromLastKnown) {
+				Ticket firstTicket = ticketsPlayed.get(0);
+				if(firstTicket == Ticket.fromRoute(routeEdge.data()) || firstTicket == Ticket.Secret){
+					possibleDestinations.add(routeEdge.target());
+				}
 			}
-			System.out.println("ticketsUsed = " + ticketsUsed);
-			Set<Move> movesMrXPossibles = validator.validMoves(mrXPos, ticketsUsed, Constants.MR_X_COLOUR, state.getPositions());
-			System.out.println("movesMrXPossibles = " + movesMrXPossibles);
 			int smallestDistance = Integer.MAX_VALUE;
 
-			for (Move move : movesMrXPossibles) {
-				MoveDetails thisMove = new MoveDetails(move);
-				int endTarget = thisMove.getEndTarget();
+			for (Integer destination : possibleDestinations) {
+				int endTarget = destination;
 
 				int thisDistance = detectiveSmallestDistance(state, endTarget);
 
@@ -84,6 +85,7 @@ public class ScorerHelper {
 					smallestDistance = thisDistance;
 				}
 			}
+			System.out.println("smallestDistance = " + smallestDistance);
 			return smallestDistance;
 		} else {
 			return detectiveSmallestDistance(state, mrXPos);
