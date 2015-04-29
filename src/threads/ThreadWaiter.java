@@ -1,23 +1,28 @@
 package threads;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by rory on 25/04/15.
  */
 public class ThreadWaiter<T> {
-	private Thread completionThread;
 	enum ThreadState {IDLE, STARTED}
 	private final ExecutorService mThreadPool;
 	private ThreadState mThreadState = ThreadState.IDLE;
-	private final Deque<T> mResults = new ArrayDeque<T>();
+
+	private Queue<T> queue = new LinkedList<T>();
+	private Lock lock = new ReentrantLock();
+	private Condition notEmpty = lock.newCondition();
 
 	public ThreadWaiter(ExecutorService threadPool) {
 		mThreadPool = threadPool;
@@ -25,17 +30,17 @@ public class ThreadWaiter<T> {
 
 	public void run(final List<Callable<T>> callables) {
 
-		mThreadState = ThreadState.STARTED;
-
-		for (Callable<T> callable : callables) {
-			try {
-				mResults.add(callable.call());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		mThreadState = ThreadState.IDLE;
+//		mThreadState = ThreadState.STARTED;
+//
+//		for (Callable<T> callable : callables) {
+//			try {
+//				mResults.add(callable.call());
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
+//
+//		mThreadState = ThreadState.IDLE;
 	}
 
 	public void thread(final List<Callable<T>> callables) {
@@ -45,7 +50,7 @@ public class ThreadWaiter<T> {
 			return;
 		} else {
 			mThreadState = ThreadState.STARTED;
-			completionThread = new Thread(new Runnable() {
+			new Thread(new Runnable() {
 				@Override
 				public void run() {
 
@@ -54,8 +59,6 @@ public class ThreadWaiter<T> {
 					for (Callable<T> callable : callables) {
 						completionService.submit(callable);
 					}
-
-					long startMillis = System.currentTimeMillis();
 
 					final int threadCount = callables.size();
 
@@ -70,60 +73,73 @@ public class ThreadWaiter<T> {
 							resultFuture = completionService.take();
 							final T result = resultFuture.get();
 
-							synchronized (mResults) {
-
 							if (received == threadCount) {
 								System.err.println("Received all " + threadCount + " responses");
-									mThreadState = ThreadState.IDLE;
+								mThreadState = ThreadState.IDLE;
 							} else {
 								System.err.println("Received " + received + " of " + threadCount + " responses");
 							}
 
+							lock.lock();
+							try {
 
-								mResults.add(result);
-								mResults.notifyAll();
+								queue.add(result);
+								notEmpty.signal();
+
+							} finally {
+								lock.unlock();
 							}
 
-//				if(LOG_THREADS) System.out.println("took " + (System.currentTimeMillis() - startMillis) + "ms to execute thread at level " + state.getCurrentDepth());
-
-						} catch (Exception e) {
-							//log
-//				if(LOG_THREADS) System.err.println("thread error (level: "+state.getCurrentDepth()+" received:"+received+"/"+threadCount+")");
-						}
-						if (received < threadCount) {
-//				if(LOG_THREADS) System.out.println("Not all threads completed yet (level: "+state.getCurrentDepth()+" received:"+received+"/"+threadCount+")");
+						} catch (Exception ignored) {
 						}
 					}
 				}
-			});
-			completionThread.start();
+			}).start();
 		}
 	}
 
 	public boolean isFinished() {
-		return mResults.size() == 0 && mThreadState == ThreadState.IDLE;
+		return queue.isEmpty() && mThreadState == ThreadState.IDLE;
 	}
 
 	public T getNext() {
 
-		synchronized (mResults) {
-			if (mResults.size() > 0) {
-				return mResults.pop();
-			} else if (mResults.size() == 0 && mThreadState == ThreadState.STARTED) {
-						System.out.println("beginning wait");
-						try {
-							mResults.wait();
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						System.out.println("ending wait");
-						if (mResults.size() > 0) {
-							return mResults.pop();
-						} else {
-							return null;
-						}
-			}
+		if(mThreadState == ThreadState.IDLE){
+			return null;
 		}
-		return null;
+
+		lock.lock();
+		try {
+			while(queue.isEmpty()) {
+				notEmpty.await();
+			}
+
+			T item = queue.remove();
+			return item;
+		} catch (InterruptedException e) {
+			return null;
+		} finally {
+			lock.unlock();
+		}
+
+//		synchronized (mResults) {
+//			if (mResults.size() > 0) {
+//				return mResults.pop();
+//			} else if (mResults.size() == 0 && mThreadState == ThreadState.STARTED) {
+//						System.out.println("beginning wait");
+//						try {
+//							mResults.wait();
+//						} catch (InterruptedException e) {
+//							e.printStackTrace();
+//						}
+//						System.out.println("ending wait");
+//						if (mResults.size() > 0) {
+//							return mResults.pop();
+//						} else {
+//							return null;
+//						}
+//			}
+//		}
+//		return null;
 	}
 }
