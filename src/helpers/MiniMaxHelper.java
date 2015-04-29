@@ -69,7 +69,7 @@ public class MiniMaxHelper {
 			}
 			state.setCurrentScore(mScorer.score(state, mValidator, mViewController));
 			scoreCount++;
-			System.out.println("score " + scoreCount + " complete");
+//			System.out.println("score " + scoreCount + " complete");
 
 //			System.out.println("score finish");
 			return state;
@@ -191,7 +191,7 @@ public class MiniMaxHelper {
 
 				for (final MoveDetails moveDetails : moveSubList) {
 
-					System.out.println("foring");
+//					System.out.println("foring");
 
 					MiniMaxState newState = state.copyFromMove(moveDetails, nextPlayer);
 
@@ -202,7 +202,7 @@ public class MiniMaxHelper {
 
 					if (nextPlayersBestState != null) {
 
-						System.out.println("state not null");
+//						System.out.println("state not null");
 
 						if (bestState == null) {
 							bestState = nextPlayersBestState;
@@ -219,16 +219,16 @@ public class MiniMaxHelper {
 						}
 
 						if (state.beta <= state.alpha) {
-							System.out.println("breaking");
+//							System.out.println("breaking");
 							break;
 						}
 					}
 				}
-				System.out.println("Done foring");
+//				System.out.println("Done foring");
 //				}
 			}
 
-			System.out.println("done calc");
+//			System.out.println("done calc");
 			return bestState;
 		}
 	}
