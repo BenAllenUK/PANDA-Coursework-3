@@ -1,5 +1,7 @@
 package MachineLearning;
 
+import helpers.Constants;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -7,7 +9,6 @@ import java.util.ArrayList;
  * Runs multiple instances of games synchronously through multiple generations to determine the best score weighting
  */
 public class MachineLearner {
-	private static final int GENE_TESTS = 5;
 	private final String NEW_LINE = System.getProperty("line.separator");
 	private GenePool mGenePool;
 
@@ -65,14 +66,17 @@ public class MachineLearner {
 	 */
 	private void startTesting() {
 
+
 		while(true) {
 			ArrayList<Gene> orderedGeneList = new ArrayList<Gene>();
 
-			for (Gene gene : mGenePool.getGenes()) {
-				while (gene.getTestCount() < GENE_TESTS) {
+			final ArrayList<Gene> genes = mGenePool.getGenes();
+			for (int i1 = 0; i1 < genes.size(); i1++) {
+				final Gene gene = genes.get(i1);
+				while (gene.getTestCount() < Constants.GENE_TESTS) {
 
 					System.out.println(NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE);
-					System.out.println("testing round " + gene.getTestCount() + " " + gene);
+					System.out.println("testing generation: " + mGenePool.getGeneration() + " gene: " + i1 + " round: " + gene.getTestCount() + " gene: " + gene);
 					System.out.println(NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE);
 
 					final GameResult result = playGame(gene);
@@ -101,8 +105,6 @@ public class MachineLearner {
 						}
 					}
 				}
-
-
 			}
 
 			System.out.println(NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE + NEW_LINE);

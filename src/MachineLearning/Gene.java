@@ -1,80 +1,36 @@
 package MachineLearning;
 
+import helpers.Constants;
 import helpers.ScorerHelper;
 import helpers.StaticConstants;
 
+import java.util.Arrays;
 import java.util.Random;
 
 /**
  * A Gene represents a weight configuration, used in {@link ScorerHelper#score}
  */
 public class Gene {
-	private static final int RAND_BOUND = 40;
-	private double MEAN_DIST_WEIGHT;
-	private double MOVE_WEIGHT;
-	private double SECRET_MOVE_WEIGHT;
-	private double VISIBLE_ROUND_WEIGHT;
-	private double INVISIBLE_ROUND_WEIGHT;
-	private double SD_DIST_WEIGHT;
-	private double BOAT_WEIGHT;
+
+	private double[] chromosome = new double[7];
+
+	private static int MEAN_DIST_WEIGHT_INDEX = 0;
+	private static int MOVE_WEIGHT_INDEX = 1;
+	private static int SECRET_MOVE_WEIGHT_INDEX = 2;
+	private static int VISIBLE_ROUND_WEIGHT_INDEX = 3;
+	private static int INVISIBLE_ROUND_WEIGHT_INDEX = 4;
+	private static int SD_DIST_WEIGHT_INDEX = 5;
+	private static int BOAT_WEIGHT_INDEX = 6;
 
 	private int testCount;
 	private int score;
 
-	public double getMEAN_DIST_WEIGHT() {
-		return MEAN_DIST_WEIGHT;
+	public double[] getChromosome() {
+		return chromosome;
 	}
 
-	public void setMEAN_DIST_WEIGHT(final double MEAN_DIST_WEIGHT) {
-		this.MEAN_DIST_WEIGHT = MEAN_DIST_WEIGHT;
-	}
-
-	public double getMOVE_WEIGHT() {
-		return MOVE_WEIGHT;
-	}
-
-	public void setMOVE_WEIGHT(final double MOVE_WEIGHT) {
-		this.MOVE_WEIGHT = MOVE_WEIGHT;
-	}
-
-	public double getSECRET_MOVE_WEIGHT() {
-		return SECRET_MOVE_WEIGHT;
-	}
-
-	public void setSECRET_MOVE_WEIGHT(final double SECRET_MOVE_WEIGHT) {
-		this.SECRET_MOVE_WEIGHT = SECRET_MOVE_WEIGHT;
-	}
-
-	public double getVISIBLE_ROUND_WEIGHT() {
-		return VISIBLE_ROUND_WEIGHT;
-	}
-
-	public void setVISIBLE_ROUND_WEIGHT(final double VISIBLE_ROUND_WEIGHT) {
-		this.VISIBLE_ROUND_WEIGHT = VISIBLE_ROUND_WEIGHT;
-	}
-
-	public double getINVISIBLE_ROUND_WEIGHT() {
-		return INVISIBLE_ROUND_WEIGHT;
-	}
-
-	public void setINVISIBLE_ROUND_WEIGHT(final double INVISIBLE_ROUND_WEIGHT) {
-		this.INVISIBLE_ROUND_WEIGHT = INVISIBLE_ROUND_WEIGHT;
-	}
-
-	public double getSD_DIST_WEIGHT() {
-		return SD_DIST_WEIGHT;
-	}
-
-	public void setSD_DIST_WEIGHT(final double SD_DIST_WEIGHT) {
-		this.SD_DIST_WEIGHT = SD_DIST_WEIGHT;
-	}
-
-	public double getBOAT_WEIGHT() {
-		return BOAT_WEIGHT;
-	}
-
-	public void setBOAT_WEIGHT(final double BOAT_WEIGHT) {
-		this.BOAT_WEIGHT = BOAT_WEIGHT;
+	public void setChromosome(final double[] chromosome) {
+		this.chromosome = chromosome;
 	}
 
 	public int getTestCount() {
@@ -98,37 +54,33 @@ public class Gene {
 
 		Random random = new Random();
 
-		gene.setMEAN_DIST_WEIGHT(random.nextInt(RAND_BOUND));
-		gene.setMOVE_WEIGHT(random.nextInt(RAND_BOUND));
-		gene.setSECRET_MOVE_WEIGHT(random.nextInt(RAND_BOUND));
-		gene.setVISIBLE_ROUND_WEIGHT(random.nextInt(RAND_BOUND));
-		gene.setINVISIBLE_ROUND_WEIGHT(random.nextInt(RAND_BOUND));
-		gene.setSD_DIST_WEIGHT(random.nextInt(RAND_BOUND));
-		gene.setBOAT_WEIGHT(random.nextInt(RAND_BOUND));
+		double[] chromosome = gene.getChromosome();
+		chromosome[MEAN_DIST_WEIGHT_INDEX] = random.nextInt(Constants.GENE_INITIAL_BOUND);
+		chromosome[MOVE_WEIGHT_INDEX] = random.nextInt(Constants.GENE_INITIAL_BOUND);
+		chromosome[SECRET_MOVE_WEIGHT_INDEX] = random.nextInt(Constants.GENE_INITIAL_BOUND);
+		chromosome[VISIBLE_ROUND_WEIGHT_INDEX] = random.nextInt(Constants.GENE_INITIAL_BOUND);
+		chromosome[INVISIBLE_ROUND_WEIGHT_INDEX] = random.nextInt(Constants.GENE_INITIAL_BOUND);
+		chromosome[SD_DIST_WEIGHT_INDEX] = random.nextInt(Constants.GENE_INITIAL_BOUND);
+		chromosome[BOAT_WEIGHT_INDEX] = random.nextInt(Constants.GENE_INITIAL_BOUND);
 
+		gene.setChromosome(chromosome);
 		return gene;
 	}
 
 	public void apply(){
-		StaticConstants.MEAN_DIST_WEIGHT = MEAN_DIST_WEIGHT;
-		StaticConstants.MOVE_WEIGHT = MOVE_WEIGHT;
-		StaticConstants.SECRET_MOVE_WEIGHT = SECRET_MOVE_WEIGHT;
-		StaticConstants.VISIBLE_ROUND_WEIGHT = VISIBLE_ROUND_WEIGHT;
-		StaticConstants.INVISIBLE_ROUND_WEIGHT = INVISIBLE_ROUND_WEIGHT;
-		StaticConstants.SD_DIST_WEIGHT = SD_DIST_WEIGHT;
-		StaticConstants.BOAT_WEIGHT = BOAT_WEIGHT;
+		StaticConstants.MEAN_DIST_WEIGHT = chromosome[MEAN_DIST_WEIGHT_INDEX];
+		StaticConstants.MOVE_WEIGHT = chromosome[MOVE_WEIGHT_INDEX];
+		StaticConstants.SECRET_MOVE_WEIGHT = chromosome[SECRET_MOVE_WEIGHT_INDEX];
+		StaticConstants.VISIBLE_ROUND_WEIGHT = chromosome[VISIBLE_ROUND_WEIGHT_INDEX];
+		StaticConstants.INVISIBLE_ROUND_WEIGHT = chromosome[INVISIBLE_ROUND_WEIGHT_INDEX];
+		StaticConstants.SD_DIST_WEIGHT = chromosome[SD_DIST_WEIGHT_INDEX];
+		StaticConstants.BOAT_WEIGHT = chromosome[BOAT_WEIGHT_INDEX];
 	}
 
 	@Override
 	public String toString() {
 		return "Gene{" +
-				"MEAN_DIST_WEIGHT=" + MEAN_DIST_WEIGHT +
-				", MOVE_WEIGHT=" + MOVE_WEIGHT +
-				", SECRET_MOVE_WEIGHT=" + SECRET_MOVE_WEIGHT +
-				", VISIBLE_ROUND_WEIGHT=" + VISIBLE_ROUND_WEIGHT +
-				", INVISIBLE_ROUND_WEIGHT=" + INVISIBLE_ROUND_WEIGHT +
-				", SD_DIST_WEIGHT=" + SD_DIST_WEIGHT +
-				", BOAT_WEIGHT=" + BOAT_WEIGHT +
+				"chromosome=" + Arrays.toString(chromosome) +
 				", score=" + score +
 				'}';
 	}

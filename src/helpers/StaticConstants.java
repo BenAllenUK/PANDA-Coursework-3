@@ -8,7 +8,7 @@ public class StaticConstants {
 	public static double INVISIBLE_ROUND_WEIGHT = -2426;
 	public static double SD_DIST_WEIGHT = -4287;
 	public static double BOAT_WEIGHT = 66000;
-	public static boolean PLAY_GAME_WITHOUT_SCORING = true;
+	public static boolean PLAY_GAME_WITHOUT_SCORING = false;
 
 
 }

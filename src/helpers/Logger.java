@@ -6,11 +6,11 @@ package helpers;
 public class Logger {
 
 
-	public static final boolean DEBUG_THREADS = true;
-	public static final boolean DEBUG_TIMINGS = true;
+	public static final boolean DEBUG_THREADS = false;
+	public static final boolean DEBUG_TIMINGS = false;
 	public static final boolean DEBUG_INFO = true;
 	public static final boolean DEBUG_VERBOSE = false;
-	public static final boolean DEBUG_DETECTIVES = true;
+	public static final boolean DEBUG_DETECTIVES = false;
 	
 	public static void logTiming(final String text){
 		if(DEBUG_TIMINGS){

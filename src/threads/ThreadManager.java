@@ -25,7 +25,7 @@ public class ThreadManager<T> {
 	private ThreadState mThreadState = ThreadState.IDLE;
 	private Queue<T> queue = new LinkedList<T>();
 	private Lock lock = new ReentrantLock();
-	private Condition notEmpty = lock.newCondition();
+	private Condition threadFinished = lock.newCondition();
 
 	public ThreadManager(ExecutorService threadPool) {
 		mThreadPool = threadPool;
@@ -59,33 +59,41 @@ public class ThreadManager<T> {
 
 
 						Future<T> resultFuture = null; //blocks if none available
+						T result = null;
 						try {
 
-							received++;
-
 							resultFuture = completionService.take();
-							final T result = resultFuture.get();
-
+							result = resultFuture.get();
 							Logger.logTiming(getThreadId() + "# Received " + received + " of " + threadCount + " responses in " + (System.currentTimeMillis() - startMillis)+"ms");
 
-							if (received == threadCount) {
-								Logger.logTiming(getThreadId()+"# Received all " + threadCount + " responses");
-								mThreadState = ThreadState.IDLE;
-							}
 
-							lock.lock();
-							try {
-
-								queue.add(result);
-								notEmpty.signal();
-							} finally {
-								lock.unlock();
-							}
 						} catch (Exception e) {
-							received++;
+
 							System.out.println(getThreadId() + "# exception while receiving: " + received + " out of " + threadCount);
 							e.printStackTrace();
+
 						}
+
+						received++;
+
+						if (received == threadCount) {
+							Logger.logTiming(getThreadId()+"# Received all " + threadCount + " responses");
+							mThreadState = ThreadState.IDLE;
+						}
+
+						lock.lock();
+						try {
+
+							if(result != null) {
+								queue.add(result);
+							}
+
+							threadFinished.signal();
+						} finally {
+							lock.unlock();
+						}
+
+
 					}
 
 					Logger.logTiming(getThreadId()+"# Took " + (System.currentTimeMillis() - startMillis) + "ms to complete "+threadCount+" threads");
@@ -100,7 +108,7 @@ public class ThreadManager<T> {
 	}
 
 	public T getNext() {
-		if (queue.isEmpty() && mThreadState == ThreadState.IDLE) {
+		if (isFinished()) {
 			return null;
 		}
 
@@ -110,7 +118,11 @@ public class ThreadManager<T> {
 			Logger.logThread(getThreadId()+"# beginning wait (queue size: "+queue.size()+")");
 
 			while (queue.isEmpty()) {
-				notEmpty.await();
+				threadFinished.await();
+
+				if (isFinished()) {
+					return null;
+				}
 			}
 
 			Logger.logThread(getThreadId()+"# stopping wait (queue size: "+queue.size()+")");
