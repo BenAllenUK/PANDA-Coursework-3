@@ -40,10 +40,7 @@ public class MiniMaxState {
 
 	public MiniMaxState copyFromMove(final MoveDetails moveDetails, final Colour nextPlayer) {
 
-		lastMoves.put(currentPlayer, moveDetails);
 
-		// If it is Mr X then add his ticket to the list of played tickets
-		updateMrXTicketsUsed(moveDetails);
 
 		final Colour currentPlayer = moveDetails.getMove().colour;
 		HashMap<Colour,HashMap<Ticket, Integer>> futureTickets = updateFutureTicketNumbers(
@@ -52,7 +49,7 @@ public class MiniMaxState {
 				moveDetails.getTicket2(),
 				tickets
 		);
-		HashMap<Colour, Integer> futurePositions = (HashMap<Colour, Integer>) positions.clone();
+		HashMap<Colour, Integer> futurePositions = new HashMap<>(positions);
 		futurePositions.replace(currentPlayer, moveDetails.getEndTarget());
 
 		// Add to round number only if the round is about to finish
@@ -64,12 +61,17 @@ public class MiniMaxState {
 
 		final HashMap<Colour, MoveDetails> lastMovesClone = new HashMap<>();
 
+		lastMovesClone.put(currentPlayer, moveDetails);
+
 		for(HashMap.Entry<Colour, MoveDetails> entry : lastMoves.entrySet()){
 			lastMovesClone.put(entry.getKey(), entry.getValue().clone());
 		}
 		// Setup the new state
 		newState.setLastMoveMap(lastMovesClone);
 		newState.setCurrentDepth(currentDepth + 1);
+
+		// If it is Mr X then add his ticket to the list of played tickets
+		newState.updateMrXTicketsUsed(moveDetails);
 
 		newState.alpha = alpha;
 		newState.beta = beta;
