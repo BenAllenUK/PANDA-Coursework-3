@@ -1,6 +1,10 @@
 package player;
 
-import helpers.*;
+import helpers.Constants;
+import helpers.Logger;
+import helpers.MiniMaxHelper;
+import helpers.MrXTicketInfo;
+import helpers.ScorerHelper;
 import models.MiniMaxState;
 import models.MoveDetails;
 import scotlandyard.Colour;
@@ -16,7 +20,6 @@ import solution.ScotlandYardMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
 
@@ -76,6 +79,11 @@ public class MyAIPlayer implements Player {
 
 		//begin the minimaxing
 		final MiniMaxState bestState = mMiniMaxHelper.minimax(initialState);
+
+		if(bestState == null || bestState.getLastMove(currentPlayer) == null){
+			return new ArrayList<>(moves).get(new Random().nextInt(moves.size()-1));
+		}
+
 		MoveDetails bestMoveDetails = bestState.getLastMove(currentPlayer);
 
 		// Log some information
@@ -130,6 +138,6 @@ public class MyAIPlayer implements Player {
 			playerTicketNumbers.put(thisPlayer, currentTicketNumbers);
 		}
 
-		return new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer, mViewController.getRounds(), mViewController.getRound(), new LinkedList<>(MrXTicketInfo.getTicketsUsed()));
+		return new MiniMaxState(currentPlayer, playerPositions, playerTicketNumbers, currentPlayer, mViewController.getRounds(), mViewController.getRound(), new ArrayList<>(MrXTicketInfo.getTicketsUsed()));
 	}
 }

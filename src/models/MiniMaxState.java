@@ -1,11 +1,14 @@
 package models;
 
 import helpers.Constants;
-import helpers.MrXTicketInfo;
 import scotlandyard.Colour;
 import scotlandyard.Ticket;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by rory on 24/04/15.
@@ -57,7 +60,7 @@ public class MiniMaxState {
 		if(nextPlayer == Constants.MR_X_COLOUR){
 			newRoundNumber++;
 		}
-		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer, rounds, newRoundNumber, new LinkedList<>(mrXTickets));
+		MiniMaxState newState = new MiniMaxState(nextPlayer, futurePositions, futureTickets, rootPlayer, rounds, newRoundNumber, new ArrayList<>(mrXTickets));
 
 		final HashMap<Colour, MoveDetails> lastMovesClone = new HashMap<>();
 
